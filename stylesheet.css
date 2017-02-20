@@ -1,0 +1,96 @@
+body {
+  background-color: #636363;
+  padding: 0;
+  margin: 0;
+  font-family: "Lucida Sans Unicode", "Lucida Grande", sans-serif;
+}
+
+header {
+  padding: 0;
+  margin: 0;
+  width: 100%;
+  background-image: url("eggcave_background_by_elz_art-d6gfzzr.png");
+  background-size: 100% auto;
+  padding-top:20%;
+}
+
+nav{
+  width: 80%;
+  margin-top: -1.5%;
+  height: 4%;
+  margin-left: 10%;
+  background-color: #1F1F1F;
+  list-style:none;
+  text-align:center;
+  border-radius: 2px;
+}
+
+nav ul{
+  margin:0;
+  padding: 0;
+}
+
+nav li{
+  display:inline;
+  margin:0;
+  padding: 0;
+}
+
+nav li a{
+  padding: .5%;
+  margin: .5%;
+  width: 17%;
+  height: auto;
+  border-radius: 2px;
+}
+
+.blue{
+  background-color: #459991;
+}
+
+.purple{
+  background-color: #7D455E;
+}
+
+.green{
+  background-color: #1D753C;
+}
+
+.orange{
+  background-color: #A85B1D;
+}
+
+.yellow{
+  background-color: #FCDD06;
+}
+
+nav a{
+  display:inline-block;
+  padding:10px;
+}
+
+.main {
+  width: 100%;
+  margin-top: 1%;
+  margin-bottom: 1%;
+}
+
+.sidebar {
+  padding: 1%;
+  float: left;
+  width: 21%;
+  height: inherit;
+  margin-left: 1%;
+  background-color: #1F1F1F;
+  border-radius: 2px;
+}
+
+.content {
+  padding: 1%;
+  float: right;
+  margin-right: 1%;
+  width: 72%;
+  height: inherit;
+  background-color: #CFCFCF;
+  border-radius: 2px;
+}
