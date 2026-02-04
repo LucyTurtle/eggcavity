@@ -5,7 +5,6 @@
 @section('content')
 <div class="page-header">
     <h1>{{ $owner->name }}'s creature wishlist</h1>
-    <p class="lead">Shared wishlist. View only.</p>
     <p style="font-size: 0.9375rem; margin-top: 0.5rem;">
         <a href="{{ route('wishlists.shared', ['slug' => $owner->wishlist_share_slug]) }}">View all wishlists</a>
         · <a href="{{ route('wishlists.shared.items', ['slug' => $owner->wishlist_share_slug]) }}">Item wishlist</a>

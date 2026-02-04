@@ -60,6 +60,7 @@
         width: 90px;
         height: 90px;
         margin: 0 auto 1rem;
+        background: var(--surface);
     }
     .travel-viewer-result-card .stage-image-wrapper .trinket-background {
         position: absolute;

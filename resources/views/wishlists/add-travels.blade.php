@@ -43,7 +43,24 @@
     .add-submit { margin-top: 1.5rem; }
     .add-submit button { padding: 0.5rem 1.25rem; background: var(--accent); color: white; border: none; border-radius: var(--radius-sm); font-weight: 500; font-size: 0.9375rem; cursor: pointer; font-family: inherit; }
     .add-submit button:hover { background: var(--accent-hover); }
-    .add-pagination { margin-top: 1.5rem; }
+    .add-pagination { margin-top: 1.5rem; margin-bottom: 2rem; }
+    .add-pagination nav { display: flex; justify-content: center; flex-wrap: wrap; gap: 0.25rem; }
+    .add-pagination ul.pagination { list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 0.25rem; justify-content: center; }
+    .add-pagination ul.pagination li { display: inline-block; }
+    .add-pagination ul.pagination a, .add-pagination ul.pagination span {
+        padding: 0.5rem 0.75rem;
+        border-radius: var(--radius-sm);
+        font-size: 0.875rem;
+        text-decoration: none;
+        border: 1px solid var(--border);
+        background: var(--surface);
+        color: var(--text);
+        display: inline-block;
+    }
+    .add-pagination ul.pagination a:hover { background: var(--accent-muted); border-color: var(--accent); color: var(--accent); }
+    .add-pagination ul.pagination span { background: var(--bg); color: var(--text-secondary); }
+    .add-pagination ul.pagination li.disabled span { cursor: not-allowed; }
+    .add-pagination ul.pagination li.active span { background: var(--accent-muted); border-color: var(--accent); color: var(--accent); }
 </style>
 
 @if($travels->isEmpty())

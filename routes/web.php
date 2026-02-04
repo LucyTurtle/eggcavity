@@ -39,16 +39,19 @@ Route::middleware('guest')->group(function () {
 Route::middleware('auth')->group(function () {
     Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
     Route::get('/account', [AccountController::class, 'index'])->name('account');
+    Route::post('/account/password', [AccountController::class, 'updatePassword'])->name('account.password.update');
     // Dashboard for admin/developer (optional; users can still be logged in without access)
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard')->middleware('role:admin,developer');
     // Manage content (admin/developer)
     Route::middleware('role:admin,developer')->prefix('dashboard/content')->name('content.')->group(function () {
         Route::get('/', [ContentManagementController::class, 'index'])->name('index');
+        Route::get('creatures', [ContentManagementController::class, 'indexCreatures'])->name('creature.index');
         Route::get('creatures/create', [ContentManagementController::class, 'createCreature'])->name('creature.create');
         Route::post('creatures', [ContentManagementController::class, 'storeCreature'])->name('creature.store');
         Route::get('creatures/{archiveItem}/edit', [ContentManagementController::class, 'editCreature'])->name('creature.edit');
         Route::put('creatures/{archiveItem}', [ContentManagementController::class, 'updateCreature'])->name('creature.update');
         Route::delete('creatures/{archiveItem}', [ContentManagementController::class, 'destroyCreature'])->name('creature.destroy');
+        Route::get('items', [ContentManagementController::class, 'indexItems'])->name('item.index');
         Route::get('items/create', [ContentManagementController::class, 'createItem'])->name('item.create');
         Route::post('items', [ContentManagementController::class, 'storeItem'])->name('item.store');
         Route::get('items/{item}/edit', [ContentManagementController::class, 'editItem'])->name('item.edit');
@@ -60,6 +63,7 @@ Route::middleware('auth')->group(function () {
         Route::get('travel-suggestions/{travelSuggestion}/edit', [TravelSuggestionController::class, 'edit'])->name('travel-suggestions.edit');
         Route::put('travel-suggestions/{travelSuggestion}', [TravelSuggestionController::class, 'update'])->name('travel-suggestions.update');
         Route::delete('travel-suggestions/{travelSuggestion}', [TravelSuggestionController::class, 'destroy'])->name('travel-suggestions.destroy');
+        Route::post('archive/{slug}/apply-recommended-travels', [ArchiveController::class, 'applyRecommendedToAllStages'])->name('archive.apply-recommended-travels');
     });
     // Impersonation (developer only)
     Route::post('/impersonate/{user}/start', [ImpersonationController::class, 'start'])->name('impersonate.start')->middleware('role:developer');

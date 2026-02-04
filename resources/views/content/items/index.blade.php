@@ -1,11 +1,11 @@
 @extends('layouts.app')
 
-@section('title', 'Travel suggestions')
+@section('title', 'Manage items')
 
 @section('content')
 <div class="page-header">
-    <h1>Travel suggestions</h1>
-    <p class="lead">Manage travel suggestions for creature stages.</p>
+    <h1>Items</h1>
+    <p class="lead">Add, edit, or remove items from the catalog.</p>
 </div>
 
 <style>
@@ -35,50 +35,36 @@
 </style>
 
 @if(session('success'))
-    <div class="card" style="background: #f0fdf4; border-color: #22c55e; margin-bottom: 1rem;">
-        <p style="margin: 0; color: #15803d;">{{ session('success') }}</p>
-    </div>
+    <div class="card" style="background: var(--accent-muted); border-color: var(--accent); margin-bottom: 1rem;">{{ session('success') }}</div>
 @endif
 
 <div style="margin-bottom: 1.5rem; display: flex; flex-wrap: wrap; align-items: center; gap: 1rem;">
-    <a href="{{ route('content.travel-suggestions.create') }}" class="btn-add">Add travel suggestion</a>
-    @if($suggestions->total() > 0)
-        <span style="font-size: 0.9375rem; color: var(--text-secondary);">Page {{ $suggestions->currentPage() }} of {{ $suggestions->lastPage() }} ({{ $suggestions->total() }} total)</span>
-    @endif
+    <a href="{{ route('content.item.create') }}" class="btn-add">Add item</a>
+    <span style="font-size: 0.9375rem; color: var(--text-secondary);">Page {{ $items->currentPage() }} of {{ $items->lastPage() }} ({{ $items->total() }} total)</span>
 </div>
 
-@if($suggestions->isEmpty())
-    <p style="color: var(--text-secondary); font-size: 0.9375rem;">No travel suggestions yet. <a href="{{ route('content.travel-suggestions.create') }}">Add one</a>.</p>
+@if($items->isEmpty())
+    <p style="color: var(--text-secondary); font-size: 0.9375rem;">No items yet. <a href="{{ route('content.item.create') }}">Add one</a>.</p>
 @else
     <table class="content-table">
         <thead>
             <tr>
-                <th>Creature</th>
-                <th>Stage</th>
-                <th>Travel</th>
-                <th>Notes</th>
+                <th>Name</th>
+                <th>Slug</th>
+                <th>Use</th>
                 <th style="width: 12rem;">Actions</th>
             </tr>
         </thead>
         <tbody>
-            @foreach($suggestions as $suggestion)
+            @foreach($items as $item)
                 <tr>
-                    <td>
-                        <a href="{{ route('archive.show', $suggestion->archiveStage->archiveItem->slug) }}">
-                            {{ $suggestion->archiveStage->archiveItem->title }}
-                        </a>
-                    </td>
-                    <td>Stage {{ $suggestion->archiveStage->stage_number }}</td>
-                    <td>
-                        <a href="{{ route('items.show', $suggestion->item->slug) }}">
-                            {{ $suggestion->item->name }}
-                        </a>
-                    </td>
-                    <td>{{ $suggestion->notes ?: '—' }}</td>
+                    <td><a href="{{ route('items.show', $item->slug) }}">{{ $item->name }}</a></td>
+                    <td><code style="font-size: 0.8125rem;">{{ $item->slug }}</code></td>
+                    <td>{{ $item->use ?? '—' }}</td>
                     <td>
                         <div class="content-actions">
-                            <a href="{{ route('content.travel-suggestions.edit', $suggestion) }}" class="btn-sm">Edit</a>
-                            <form method="post" action="{{ route('content.travel-suggestions.destroy', $suggestion) }}" onsubmit="return confirm('Remove this travel suggestion?');">
+                            <a href="{{ route('items.show', $item->slug) }}" class="btn-sm">View</a>
+                            <form method="post" action="{{ route('content.item.destroy', $item) }}" onsubmit="return confirm('Remove this item?');">
                                 @csrf
                                 @method('DELETE')
                                 <button type="submit" class="btn-sm btn-danger">Remove</button>
@@ -90,9 +76,9 @@
         </tbody>
     </table>
 
-    @if($suggestions->hasPages())
+    @if($items->hasPages())
         <div class="content-pagination">
-            {{ $suggestions->links('pagination::custom') }}
+            {{ $items->links('pagination::custom') }}
         </div>
     @endif
 @endif

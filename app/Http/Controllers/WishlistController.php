@@ -185,7 +185,7 @@ class WishlistController extends Controller
                 ['archive_item_id' => $archiveItemId],
                 [
                     'amount' => min(max($amount, 1), 9999),
-                    'gender' => isset($data['gender']) && in_array($data['gender'], ['male', 'female', 'non-binary', 'no_preference'], true) ? $data['gender'] : null,
+                    'gender' => isset($data['gender']) && in_array($data['gender'], ['male', 'female', 'non-binary', 'no_preference'], true) ? $data['gender'] : 'no_preference',
                     'notes' => isset($data['notes']) ? mb_substr($data['notes'], 0, 2000) : null,
                 ]
             );
@@ -274,7 +274,7 @@ class WishlistController extends Controller
             ['archive_item_id' => $valid['archive_item_id']],
             [
                 'amount' => $valid['amount'] ?? 1,
-                'gender' => $valid['gender'] ?? null,
+                'gender' => $valid['gender'] ?? 'no_preference',
                 'notes' => $valid['notes'] ?? null,
             ]
         );
@@ -344,7 +344,7 @@ class WishlistController extends Controller
         ]);
         $creatureWishlist->update([
             'amount' => $valid['amount'] ?? 1,
-            'gender' => $valid['gender'] ?? null,
+            'gender' => $valid['gender'] ?? 'no_preference',
             'notes' => $valid['notes'] ?? null,
         ]);
         return back()->with('success', 'Creature wishlist entry updated.');

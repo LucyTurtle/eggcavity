@@ -227,6 +227,7 @@ class EggcaveArchiveScraper
             'about_creature' => null,
             'entry_written_by' => null,
             'design_concept_user' => null,
+            'cdwc_entry_by' => null,
             'tags' => [],
         ];
         if ($body->count() === 0) {
@@ -378,9 +379,10 @@ class EggcaveArchiveScraper
             }
         }
 
-        // Entry Written By and Design Concept: .box containing both - extract separately
+        // Entry Written By, Design Concept, and CDWC Winning Entry By: .box - extract separately
         $entryWrittenBy = null;
         $designConceptUser = null;
+        $cdwcEntryBy = null;
         $boxes = $body->filter('.box');
         foreach ($boxes as $boxNode) {
             $box = new Crawler($boxNode);
@@ -388,6 +390,17 @@ class EggcaveArchiveScraper
             $boxText = trim($box->text());
             // Normalize whitespace for text-based fallback
             $boxTextNorm = preg_replace('/\s+/', ' ', $boxText);
+
+            // CDWC Winning Entry By: e.g. <strong>CDWC Winning Entry By:</strong> <a href="/@vespira">vespira</a>
+            if (stripos($boxText, 'CDWC') !== false && (stripos($boxText, 'Winning Entry') !== false || stripos($boxText, 'Entry By') !== false)) {
+                if (preg_match('/CDWC\s+Winning\s+Entry\s+By\s*:?\s*<\/strong>\s*<a[^>]*>([^<]+)<\/a>/is', $boxHtml, $m)) {
+                    $cdwcEntryBy = trim(strip_tags($m[1]));
+                } elseif (preg_match('/CDWC\s+Winning\s+Entry\s+By\s*:?\s*([^\s<]+)/is', $boxHtml, $m)) {
+                    $cdwcEntryBy = trim(strip_tags($m[1]));
+                } elseif (preg_match('/CDWC\s+Winning\s+Entry\s+By\s*:?\s*(\S+)/i', $boxTextNorm, $m)) {
+                    $cdwcEntryBy = trim($m[1]);
+                }
+            }
 
             // Check if this box contains "Entry Written By" or "Design Concept"
             if (stripos($boxText, 'Entry Written By') !== false || stripos($boxText, 'Design Concept') !== false) {
@@ -465,6 +478,7 @@ class EggcaveArchiveScraper
             'about_creature' => $aboutCreature,
             'entry_written_by' => $entryWrittenBy,
             'design_concept_user' => $designConceptUser,
+            'cdwc_entry_by' => $cdwcEntryBy,
             'tags' => $tags,
         ];
     }
@@ -555,6 +569,7 @@ class EggcaveArchiveScraper
                     'about_creature' => null,
                     'entry_written_by' => null,
                     'design_concept_user' => null,
+                    'cdwc_entry_by' => null,
                     'tags' => [],
                 ];
             }
@@ -582,6 +597,7 @@ class EggcaveArchiveScraper
                     'about_creature' => $data['about_creature'] ?? null,
                     'entry_written_by' => $data['entry_written_by'] ?? null,
                     'design_concept_user' => $data['design_concept_user'] ?? null,
+                    'cdwc_entry_by' => $data['cdwc_entry_by'] ?? null,
                     'tags' => $data['tags'] ?? [],
                 ]
             );

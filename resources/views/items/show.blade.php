@@ -3,24 +3,12 @@
 @section('title', $item->name)
 
 @section('content')
-<div class="page-header">
-    <nav style="font-size: 0.9375rem; margin-bottom: 0.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
-        <a href="{{ route('items.index') }}">← Back to items</a>
-        <span style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
-            @if($item->source_url)
-                <a href="{{ $item->source_url }}" target="_blank" rel="noopener noreferrer">Open on EggCave.com →</a>
-            @endif
-        </span>
-    </nav>
-    <h1>{{ $item->name }}</h1>
-</div>
-
 <style>
     .item-detail .main-img {
         max-width: 100%;
         max-width: 300px;
         border: 1px solid var(--border);
-        background: var(--bg);
+        background: var(--surface);
         display: block;
         margin: 0 auto 1.5rem;
     }
@@ -76,7 +64,7 @@
     }
     .item-detail .creature-card .thumb {
         aspect-ratio: 1;
-        background: var(--bg);
+        background: var(--surface);
         display: flex;
         align-items: center;
         justify-content: center;
@@ -98,58 +86,130 @@
         color: var(--text);
         text-align: center;
     }
+    .item-detail .form-group { margin-bottom: 1rem; }
+    .item-detail .form-group label { display: block; font-weight: 500; font-size: 0.9375rem; margin-bottom: 0.35rem; color: var(--text); }
+    .item-detail .form-group input, .item-detail .form-group textarea { width: 100%; max-width: 28rem; padding: 0.5rem 0.75rem; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 0.9375rem; font-family: inherit; box-sizing: border-box; }
+    .item-detail .form-group textarea { min-height: 4rem; resize: vertical; }
+    .item-detail .form-group input[type="checkbox"] { width: auto; max-width: none; }
+    .item-detail .btn-submit { padding: 0.5rem 1.25rem; background: var(--accent); color: white; border: none; border-radius: var(--radius-sm); font-weight: 500; font-size: 0.9375rem; cursor: pointer; font-family: inherit; }
+    .item-detail .btn-cancel { padding: 0.5rem 1.25rem; background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: var(--radius-sm); font-weight: 500; font-size: 0.9375rem; text-decoration: none; display: inline-block; margin-left: 0.5rem; }
+    .item-detail .btn-cancel:hover { border-color: var(--accent); color: var(--accent); }
+    .item-detail .edit-mode { display: none; }
+    .item-detail.edit-mode .view-mode { display: none !important; }
+    .item-detail.edit-mode .edit-mode { display: block !important; }
+    .item-detail .edit-mode input, .item-detail .edit-mode textarea { max-width: 100%; }
 </style>
 
+@if(session('success'))
+    <div class="card" style="background: var(--accent-muted); border-color: var(--accent); margin-bottom: 1rem;">{{ session('success') }}</div>
+@endif
+@if($errors->isNotEmpty())
+    <div class="card" style="border-color: #dc2626; background: #fef2f2; margin-bottom: 1rem;">
+        <p style="margin: 0 0 0.5rem 0; font-weight: 600; color: #dc2626;">Please fix the errors below.</p>
+        <ul style="margin: 0; padding-left: 1.25rem; color: #dc2626;">
+            @foreach($errors->all() as $err)<li>{{ $err }}</li>@endforeach
+        </ul>
+    </div>
+@endif
+
+@if($canEdit ?? false)
+<form method="post" action="{{ route('content.item.update', $item) }}" id="item-edit-form">
+    @csrf
+    @method('PUT')
+    <input type="hidden" name="slug" value="{{ old('slug', $item->slug) }}">
+    <div class="page-header">
+        <nav style="font-size: 0.9375rem; margin-bottom: 0.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+            <a href="{{ route('items.index') }}">← Back to items</a>
+            <span style="display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center;">
+                <button type="button" id="item-edit-toggle" style="padding: 0.35rem 0.75rem; font-size: 0.9375rem; background: var(--accent-muted); color: var(--accent); border: 1px solid var(--accent); border-radius: var(--radius-sm); cursor: pointer; font-weight: 500;">Edit</button>
+                @if($item->source_url)
+                    <a href="{{ $item->source_url }}" target="_blank" rel="noopener noreferrer">Open on EggCave.com →</a>
+                @endif
+            </span>
+        </nav>
+        <h1 style="margin: 0 0 0.5rem 0;">
+            <span class="view-mode">{{ $item->name }}</span>
+            <input class="edit-mode" name="name" id="item-name-input" value="{{ old('name', $item->name) }}" required style="display: none; width: 100%; max-width: 28rem; padding: 0.5rem 0.75rem; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 1.75rem; font-weight: 700; font-family: inherit; box-sizing: border-box;">
+        </h1>
+    </div>
+    <div class="item-detail @if($errors->isNotEmpty()) edit-mode @endif" id="item-detail">
+@else
+<div class="page-header">
+    <nav style="font-size: 0.9375rem; margin-bottom: 0.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+        <a href="{{ route('items.index') }}">← Back to items</a>
+        <span style="display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center;">
+            @if($item->source_url)
+                <a href="{{ $item->source_url }}" target="_blank" rel="noopener noreferrer">Open on EggCave.com →</a>
+            @endif
+        </span>
+    </nav>
+    <h1 style="margin: 0 0 0.5rem 0;">{{ $item->name }}</h1>
+</div>
 <div class="item-detail">
-    @if($item->image_url)
-        <img src="{{ $item->image_url }}" alt="{{ $item->name }}" class="main-img" loading="lazy" referrerpolicy="no-referrer">
+@endif
+    {{-- Main image + image URL in edit mode --}}
+    <div class="view-mode">
+        @if($item->image_url)
+            <img src="{{ $item->image_url }}" alt="{{ $item->name }}" class="main-img" loading="lazy" referrerpolicy="no-referrer">
+        @endif
+    </div>
+    @if($canEdit ?? false)
+    <div class="edit-mode" style="display: none;">
+        <div class="form-group"><label>Image URL</label><input type="url" name="image_url" value="{{ old('image_url', $item->image_url) }}" placeholder="https://..."></div>
+    </div>
     @endif
 
-    @if($item->description)
+    @if($item->description || ($canEdit ?? false))
         <div class="card">
-            <p style="font-size: 1.0625rem; margin: 0;">{{ $item->description }}</p>
+            <div class="view-mode">
+                @if($item->description)
+                    <p style="font-size: 1.0625rem; margin: 0;">{{ $item->description }}</p>
+                @endif
+            </div>
+            @if($canEdit ?? false)
+            <div class="edit-mode" style="display: none;"><div class="form-group" style="margin: 0;"><label>Description</label><textarea name="description" rows="4">{{ old('description', $item->description) }}</textarea></div></div>
+            @endif
         </div>
     @endif
 
-    @if($item->rarity || $item->use || $item->associated_shop || $item->restock_price || $item->first_appeared || $item->is_retired)
+    @if($item->rarity || $item->use || $item->associated_shop || $item->restock_price || $item->first_appeared || $item->is_retired || ($canEdit ?? false))
         <div class="card">
             <h3 style="margin: 0 0 0.75rem 0; font-size: 1rem;">Details</h3>
-            <dl class="stats-grid">
+            <dl class="stats-grid view-mode">
                 @if($item->rarity)
                     <div class="stat-item">
                         <dt>Rarity</dt>
-                        <dd class="rarity" style="color: {{ $item->rarity_color }};">{{ $item->rarity }}</dd>
+                        <dd class="rarity" style="color: {{ $item->rarity_color ?? 'inherit' }};">{{ $item->rarity }}</dd>
                     </div>
                 @endif
                 @if($item->use)
-                    <div class="stat-item">
-                        <dt>Use</dt>
-                        <dd>{{ $item->use }}</dd>
-                    </div>
+                    <div class="stat-item"><dt>Use</dt><dd>{{ $item->use }}</dd></div>
                 @endif
                 @if($item->associated_shop)
-                    <div class="stat-item">
-                        <dt>Associated shop</dt>
-                        <dd>{{ $item->associated_shop }}</dd>
-                    </div>
+                    <div class="stat-item"><dt>Associated shop</dt><dd>{{ $item->associated_shop }}</dd></div>
                 @endif
                 @if($item->restock_price)
-                    <div class="stat-item">
-                        <dt>Restock price</dt>
-                        <dd>{{ $item->restock_price }}</dd>
-                    </div>
+                    <div class="stat-item"><dt>Restock price</dt><dd>{{ $item->restock_price }}</dd></div>
                 @endif
                 @if($item->first_appeared)
-                    <div class="stat-item">
-                        <dt>First appeared</dt>
-                        <dd>{{ $item->first_appeared->format('F j, Y') }}</dd>
-                    </div>
+                    <div class="stat-item"><dt>First appeared</dt><dd>{{ $item->first_appeared->format('F j, Y') }}</dd></div>
                 @endif
-                <div class="stat-item">
-                    <dt>Status</dt>
-                    <dd>{{ $item->is_retired ? 'Retired' : 'Not retired' }}</dd>
-                </div>
+                <div class="stat-item"><dt>Status</dt><dd>{{ $item->is_retired ? 'Retired' : 'Not retired' }}</dd></div>
             </dl>
+            @if($canEdit ?? false)
+            <div class="edit-mode" style="display: none;">
+                <div class="stats-grid">
+                    <div class="form-group"><label>Rarity</label><input type="text" name="rarity" value="{{ old('rarity', $item->rarity) }}"></div>
+                    <div class="form-group"><label>Use</label><input type="text" name="use" value="{{ old('use', $item->use) }}"></div>
+                    <div class="form-group"><label>Associated shop</label><input type="text" name="associated_shop" value="{{ old('associated_shop', $item->associated_shop) }}"></div>
+                    <div class="form-group"><label>Restock price</label><input type="text" name="restock_price" value="{{ old('restock_price', $item->restock_price) }}"></div>
+                    <div class="form-group"><label>First appeared</label><input type="date" name="first_appeared" value="{{ old('first_appeared', $item->first_appeared?->format('Y-m-d')) }}"></div>
+                    <div class="form-group"><label><input type="checkbox" name="is_retired" value="1" {{ old('is_retired', $item->is_retired) ? 'checked' : '' }}> Retired</label></div>
+                    <div class="form-group"><label><input type="checkbox" name="is_cavecash" value="1" {{ old('is_cavecash', $item->is_cavecash) ? 'checked' : '' }}> CaveCash</label></div>
+                </div>
+                <div class="form-group"><label>Source URL (EggCave.com)</label><input type="url" name="source_url" value="{{ old('source_url', $item->source_url) }}"></div>
+            </div>
+            @endif
         </div>
     @endif
 
@@ -159,7 +219,7 @@
             <article class="creature-card">
                 <a href="{{ route('archive.show', $associatedCreature->slug) }}">
                     <div class="thumb">
-                        @if($associatedCreature->image_url)
+                        @if($associatedCreature->image_url ?? null)
                             <img src="{{ $associatedCreature->image_url }}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='inline';">
                             <span class="fallback" style="display: none;" aria-hidden="true">?</span>
                         @else
@@ -172,5 +232,38 @@
         </div>
     @endif
 
+    @if($canEdit ?? false)
+    <div class="edit-mode" id="item-edit-actions" style="margin-top: 1.5rem; @if(!$errors->isNotEmpty()) display: none; @endif">
+        <button type="submit" form="item-edit-form" class="btn-submit">Save changes</button>
+        <button type="button" id="item-edit-cancel" class="btn-cancel">Cancel</button>
+    </div>
+    @endif
+
 </div>
+@if($canEdit ?? false)
+</form>
+<script>
+(function() {
+    var toggle = document.getElementById('item-edit-toggle');
+    var detail = document.getElementById('item-detail');
+    var actions = document.getElementById('item-edit-actions');
+    if (!toggle || !detail) return;
+    function updateToggleLabel() {
+        var inEdit = detail.classList.contains('edit-mode');
+        if (actions) actions.style.display = inEdit ? 'block' : 'none';
+        toggle.textContent = inEdit ? 'Cancel' : 'Edit';
+    }
+    toggle.addEventListener('click', function() {
+        detail.classList.toggle('edit-mode');
+        updateToggleLabel();
+    });
+    var cancelBtn = document.getElementById('item-edit-cancel');
+    if (cancelBtn) cancelBtn.addEventListener('click', function() {
+        detail.classList.remove('edit-mode');
+        updateToggleLabel();
+    });
+    updateToggleLabel();
+})();
+</script>
+@endif
 @endsection

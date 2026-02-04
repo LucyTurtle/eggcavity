@@ -3,33 +3,24 @@
 @section('title', 'Home')
 
 @section('content')
+<div class="card" style="border-color: #dc2626; background: #fef2f2; margin-bottom: 1.5rem;">
+    <p style="margin: 0; color: #b91c1c; font-weight: 600;">All previous data was lost. Users will need to create a new account.</p>
+</div>
 <div class="page-header">
-    <h1>eggcavity</h1>
-    <p class="lead">The EggCave community site that existed in the past is back. Links, resources, and a home for fans.</p>
-</div>
-
-<p>This site is run by fans of <a href="https://eggcave.com" target="_blank" rel="noopener">EggCave.com</a> — the adoptables game where you collect eggs, raise creatures, and grow your collection through views, clicks, and feeds from the community.</p>
-
-<div class="card">
-    <div class="mascot-block">
-        <a href="https://eggcave.com/archives/goblar" target="_blank" rel="noopener" class="mascot-figure" title="Goblar on EggCave">
-            <img src="https://eggcave.com/archives/goblar.png" alt="" role="presentation" loading="lazy" onerror="this.remove()">
-            <span class="mascot-fallback" aria-hidden="true">Goblar</span>
-        </a>
-        <div class="mascot-body">
-            <h3>Our mascot: <a href="https://eggcave.com/archives/goblar" target="_blank" rel="noopener">Goblar</a></h3>
-            <p>Goblar is an EggCave creature and the eggcavity mascot. <a href="https://eggcave.com/archives/goblar" target="_blank" rel="noopener">View Goblar in the EggCave archives →</a></p>
-        </div>
-    </div>
+    <p class="lead">The EggCave community site. Links, resources, and a home for fans.</p>
 </div>
 
 <div class="card">
-    <h3>What is EggCave?</h3>
-    <p>EggCave is a browser-based adoptables game. You adopt eggs and creatures from places like The Cave (daily adoptables) and The Mysterious Asteroid (rare finds). Level them up by sharing creature codes and getting views, clicks, and feeds from other players. Check the CaveDex for evolution requirements and work toward immortality for your favorites.</p>
+    <h3>On this site</h3>
+    <ul>
+        <li><a href="{{ route('archive.index') }}">Archive</a> — Browse creature stages and see suggested travels.</li>
+        <li><a href="{{ route('travel-viewer.index') }}">Travel viewer</a> — Preview any travel on any creature or stage.</li>
+        <li><a href="{{ route('items.index') }}">Items</a> — Item catalog and travel-on-creature previews.</li>
+        <li><a href="{{ route('login') }}">Wishlists</a> — Sign in to manage and share your creature, item, and travel wishlists.</li>
+    </ul>
 </div>
 
 <div class="card">
-    <h3>Get started</h3>
-    <p>Head over to <a href="https://eggcave.com" target="_blank" rel="noopener">EggCave.com</a> to create an account and start adopting.</p>
+    <p><a href="https://eggcave.com" target="_blank" rel="noopener">EggCave.com</a> — play and adopt.</p>
 </div>
 @endsection

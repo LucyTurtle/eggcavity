@@ -5,7 +5,7 @@
 @section('content')
 <div class="page-header">
     <h1>Travel viewer — by travel</h1>
-    <p class="lead">Pick a travel and stage number to see every single creature with that travel in a grid. No page refresh.</p>
+    <p class="lead">Pick a travel and stage number to see every single creature with that travel.</p>
 </div>
 
 <style>

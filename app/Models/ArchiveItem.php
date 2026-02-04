@@ -23,11 +23,11 @@ class ArchiveItem extends Model
         'obtained_from',
         'gender_profile',
         'habitat',
-        'population_rank',
         'about_eggs',
         'about_creature',
         'entry_written_by',
         'design_concept_user',
+        'cdwc_entry_by',
         'tags',
     ];
 

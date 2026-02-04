@@ -5,16 +5,15 @@
 @section('content')
 <div class="page-header">
     <h1>Items</h1>
+    @if($shop || $use_type)
     <p class="lead">
-        Items from the EggCave database. Images load from EggCave.com.
-        @if($shop || $use_type)
-            <br><span style="font-size: 0.9375rem;">
-                @if($shop)Shop: <strong>{{ $shop }}</strong>@endif
-                @if($shop && $use_type) · @endif
-                @if($use_type)Type: <strong>{{ ucfirst($use_type) }}</strong>@endif
-            </span>
-        @endif
+        <span style="font-size: 0.9375rem;">
+            @if($shop)Shop: <strong>{{ $shop }}</strong>@endif
+            @if($shop && $use_type) · @endif
+            @if($use_type)Type: <strong>{{ ucfirst($use_type) }}</strong>@endif
+        </span>
     </p>
+    @endif
 </div>
 
 <style>
@@ -80,7 +79,7 @@
     .item-card a { text-decoration: none; color: inherit; display: block; }
     .item-card .thumb {
         aspect-ratio: 1;
-        background: var(--bg);
+        background: var(--surface);
         display: flex;
         align-items: center;
         justify-content: center;
@@ -102,7 +101,7 @@
         color: var(--text);
         text-align: center;
     }
-    .items-pagination { margin-top: 2rem; }
+    .items-pagination { margin-top: 2rem; margin-bottom: 2rem; }
     .items-pagination nav { display: flex; justify-content: center; flex-wrap: wrap; gap: 0.25rem; }
     .items-pagination ul.pagination { list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 0.25rem; justify-content: center; }
     .items-pagination ul.pagination li { display: inline-block; }
