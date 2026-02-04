@@ -56,6 +56,7 @@ For the site to work over HTTPS:
 1. **Server `.env`** (on the machine serving the app):
 
    - `APP_URL=https://your-domain.com` (or `https://YOUR_SERVER_IP` if you have no domain). Must use `https://`.
+   - `APP_CANONICAL_URL=https://your-domain.com` — use your real domain here so nav and redirects never use the server IP. (Defaults to `APP_URL` if unset.)
    - `SESSION_SECURE_COOKIE=true` so session cookies are sent only over HTTPS.
 
 2. **SSL on the server** — Your web server (e.g. nginx, Apache, Caddy) must:

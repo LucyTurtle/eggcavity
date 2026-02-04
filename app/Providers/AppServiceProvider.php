@@ -18,19 +18,17 @@ class AppServiceProvider extends ServiceProvider
             return;
         }
 
-        $appUrl = config('app.url');
-        if (! $appUrl) {
+        $host = request()->getHost();
+        $isLocalHost = in_array(strtolower($host), ['localhost', '127.0.0.1'], true);
+        if ($isLocalHost) {
             return;
         }
 
-        $host = request()->getHost();
-        $isLocalHost = in_array(strtolower($host), ['localhost', '127.0.0.1'], true);
-
-        if (! $isLocalHost) {
-            // Use canonical domain (APP_URL) for all generated URLs so redirects go to
-            // egcavity.com, not the server IP.
-            URL::forceRootUrl($appUrl);
-            if (str_starts_with($appUrl, 'https://')) {
+        // Use canonical URL for all generated links so nav/redirects use the domain, not the IP.
+        $canonical = config('app.canonical_url') ?: config('app.url');
+        if ($canonical) {
+            URL::forceRootUrl(rtrim($canonical, '/'));
+            if (str_starts_with($canonical, 'https://')) {
                 URL::forceScheme('https');
             }
         }
