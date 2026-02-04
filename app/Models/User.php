@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Support\Str;
 
 class User extends Authenticatable
 {
@@ -23,24 +24,30 @@ class User extends Authenticatable
         'remember_token',
     ];
 
+    /** URL slug for shared wishlists: slug of name (e.g. "test", "jane-doe"). Name is unique so this is unique. */
+    public function getWishlistShareSlugAttribute(): string
+    {
+        return Str::slug($this->name) ?: 'user';
+    }
+
     public function getWishlistShareUrlAttribute(): ?string
     {
-        return route('wishlists.shared', ['user' => $this->id]);
+        return route('wishlists.shared', ['slug' => $this->wishlist_share_slug]);
     }
 
     public function getWishlistShareCreaturesUrlAttribute(): ?string
     {
-        return route('wishlists.shared.creatures', ['user' => $this->id]);
+        return route('wishlists.shared.creatures', ['slug' => $this->wishlist_share_slug]);
     }
 
     public function getWishlistShareItemsUrlAttribute(): ?string
     {
-        return route('wishlists.shared.items', ['user' => $this->id]);
+        return route('wishlists.shared.items', ['slug' => $this->wishlist_share_slug]);
     }
 
     public function getWishlistShareTravelsUrlAttribute(): ?string
     {
-        return route('wishlists.shared.travels', ['user' => $this->id]);
+        return route('wishlists.shared.travels', ['slug' => $this->wishlist_share_slug]);
     }
 
     protected function casts(): array
