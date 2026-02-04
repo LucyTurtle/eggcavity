@@ -14,6 +14,7 @@ use App\Http\Controllers\TravelSuggestionController;
 use App\Http\Controllers\TravelViewerController;
 use App\Http\Controllers\UserManagementController;
 use App\Http\Controllers\WishlistController;
+use App\Models\Item;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', fn () => view('home'))->name('home');
@@ -93,6 +94,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/wishlists/add/creatures', [WishlistController::class, 'showAddCreatures'])->name('wishlists.add.creatures');
     Route::get('/wishlists/add/items', [WishlistController::class, 'showAddItems'])->name('wishlists.add.items');
     Route::get('/wishlists/add/travels', [WishlistController::class, 'showAddTravels'])->name('wishlists.add.travels');
+    Route::get('/wishlist/travels/add/{item}', fn (Item $item) => redirect()->route('wishlists.add.travels'))->name('wishlist.travel.add');
     Route::post('/wishlist/creatures/batch', [WishlistController::class, 'storeCreatures'])->name('wishlist.creatures.store');
     Route::post('/wishlist/items/batch', [WishlistController::class, 'storeItems'])->name('wishlist.items.store');
     Route::post('/wishlist/travels/batch', [WishlistController::class, 'storeTravels'])->name('wishlist.travels.store');

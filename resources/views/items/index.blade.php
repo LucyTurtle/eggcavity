@@ -8,13 +8,20 @@
     @if($shop || $use_type || $filter_retired || $filter_cavecash)
     <p class="lead">
         <span style="font-size: 0.9375rem;">
-            @if($shop)Shop: <strong>{{ $shop }}</strong>@endif
-            @if($shop && ($use_type || $filter_retired || $filter_cavecash)) · @endif
-            @if($use_type)Type: <strong>{{ ucfirst($use_type) }}</strong>@endif
-            @if($use_type && ($filter_retired || $filter_cavecash)) · @endif
-            @if($filter_retired)Retired only@endif
-            @if($filter_retired && $filter_cavecash) · @endif
-            @if($filter_cavecash)Cave cash only@endif
+            @if($shop)Shop: <strong>{{ $shop }}</strong>
+            @endif
+            @if($shop && ($use_type || $filter_retired || $filter_cavecash)) ·
+            @endif
+            @if($use_type)Type: <strong>{{ ucfirst($use_type) }}</strong>
+            @endif
+            @if($use_type && ($filter_retired || $filter_cavecash)) ·
+            @endif
+            @if($filter_retired)Retired only
+            @endif
+            @if($filter_retired && $filter_cavecash) ·
+            @endif
+            @if($filter_cavecash)Cave cash only
+            @endif
         </span>
     </p>
     @endif
@@ -61,13 +68,13 @@
         grid-template-columns: repeat(5, 1fr);
         gap: 1.25rem;
     }
-    @media (max-width: 1200px) {
+    @@media (max-width: 1200px) {
         .items-grid { grid-template-columns: repeat(4, 1fr); }
     }
-    @media (max-width: 900px) {
+    @@media (max-width: 900px) {
         .items-grid { grid-template-columns: repeat(3, 1fr); }
     }
-    @media (max-width: 600px) {
+    @@media (max-width: 600px) {
         .items-grid { grid-template-columns: repeat(2, 1fr); }
     }
     .item-card {
@@ -128,13 +135,20 @@
 @if($shop || $use_type || $filter_retired || $filter_cavecash)
     <div class="card" style="border-color: var(--accent); background: var(--accent-muted); margin-bottom: 1rem;">
         <p style="margin: 0;">
-            @if($shop)Filtering by shop: <strong>{{ $shop }}</strong>@endif
-            @if($shop && ($use_type || $filter_retired || $filter_cavecash)) · @endif
-            @if($use_type)Filtering by type: <strong>{{ ucfirst($use_type) }}</strong>@endif
-            @if($use_type && ($filter_retired || $filter_cavecash)) · @endif
-            @if($filter_retired)Retired only@endif
-            @if($filter_retired && $filter_cavecash) · @endif
-            @if($filter_cavecash)Cave cash only@endif
+            @if($shop)Filtering by shop: <strong>{{ $shop }}</strong>
+            @endif
+            @if($shop && ($use_type || $filter_retired || $filter_cavecash)) ·
+            @endif
+            @if($use_type)Filtering by type: <strong>{{ ucfirst($use_type) }}</strong>
+            @endif
+            @if($use_type && ($filter_retired || $filter_cavecash)) ·
+            @endif
+            @if($filter_retired)Retired only
+            @endif
+            @if($filter_retired && $filter_cavecash) ·
+            @endif
+            @if($filter_cavecash)Cave cash only
+            @endif
             <a href="{{ route('items.index', array_merge(request()->except(['shop', 'use_type', 'retired', 'cavecash']), ['sort' => $sort, 'dir' => $dir])) }}" style="margin-left: 0.5rem; color: var(--accent); font-weight: 500;">Clear filters</a>
         </p>
     </div>
@@ -142,19 +156,26 @@
 
 <form method="get" action="{{ route('items.index') }}" class="items-toolbar">
     <input type="search" name="q" value="{{ old('q', $search) }}" placeholder="Search items..." aria-label="Search">
-    @if($shop)<input type="hidden" name="shop" value="{{ $shop }}">@endif
-    @if($use_type)<input type="hidden" name="use_type" value="{{ $use_type }}">@endif
-    @if($filter_retired)<input type="hidden" name="retired" value="1">@endif
-    @if($filter_cavecash)<input type="hidden" name="cavecash" value="1">@endif
+    @if($shop)<input type="hidden" name="shop" value="{{ $shop }}">
+    @endif
+    @if($use_type)<input type="hidden" name="use_type" value="{{ $use_type }}">
+    @endif
+    @if($filter_retired)<input type="hidden" name="retired" value="1">
+    @endif
+    @if($filter_cavecash)<input type="hidden" name="cavecash" value="1">
+    @endif
     <input type="hidden" name="sort" value="{{ $sort }}">
     <input type="hidden" name="dir" value="{{ $dir }}">
     <button type="submit">Search</button>
 </form>
 
 <form method="get" action="{{ route('items.index') }}" class="items-toolbar" style="margin-top: -0.5rem;">
-    @if(request('q'))<input type="hidden" name="q" value="{{ request('q') }}">@endif
-    @if($shop)<input type="hidden" name="shop" value="{{ $shop }}">@endif
-    @if($use_type)<input type="hidden" name="use_type" value="{{ $use_type }}">@endif
+    @if(request('q'))<input type="hidden" name="q" value="{{ request('q') }}">
+    @endif
+    @if($shop)<input type="hidden" name="shop" value="{{ $shop }}">
+    @endif
+    @if($use_type)<input type="hidden" name="use_type" value="{{ $use_type }}">
+    @endif
     <label for="shop" style="font-size: 0.9375rem; color: var(--text-secondary);">Shop</label>
     <select name="shop" id="shop" onchange="this.form.submit()">
         <option value="">All shops</option>
@@ -191,7 +212,9 @@
         <p>No items yet. Run <code>php artisan items:scrape</code> to import from EggCave.com.</p>
         <p><a href="https://eggcave.com/items" target="_blank" rel="noopener">View items on EggCave.com →</a></p>
     </div>
-@else
+@endif
+
+@if(!$items->isEmpty())
     <div class="items-grid">
         @foreach($items as $item)
             <article class="item-card">
@@ -209,11 +232,8 @@
             </article>
         @endforeach
     </div>
-
-    @if($items->hasPages())
-        <div class="items-pagination">
-            {{ $items->links('pagination::custom') }}
-        </div>
-    @endif
+    <div class="items-pagination">
+        {{ $items->links('pagination::custom') }}
+    </div>
 @endif
 @endsection
