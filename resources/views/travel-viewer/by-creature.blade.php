@@ -6,6 +6,7 @@
 <div class="page-header">
     <h1>Travel viewer — by creature</h1>
     <p class="lead">Pick a creature and stage to see that creature with every single travel below.</p>
+    <p style="font-size: 0.9375rem; color: var(--text-secondary); margin: 0.5rem 0 0 0;">Click any creature+travel card below to save that combination; saved items are stored in your browser and can be removed anytime.</p>
 </div>
 
 <style>
@@ -27,6 +28,18 @@
     .tv-result-card .stage-image-wrapper .trinket-background { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 1; }
     .tv-result-card .stage-image-wrapper img:not(.trinket-background) { position: relative; width: 100%; height: 100%; object-fit: contain; z-index: 2; }
     .tv-result-card .travel-name { font-size: 0.75rem; color: var(--text-secondary); margin: 0.35rem 0 0 0; line-height: 1.2; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+    .tv-result-card { cursor: pointer; }
+    .tv-result-card:hover { border-color: var(--accent); }
+    .saved-combos { margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--border); }
+    .saved-combos h3 { font-size: 1rem; margin: 0 0 0.75rem 0; }
+    .saved-combos-grid { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: flex-start; }
+    .saved-combo-card { position: relative; width: 100px; flex-shrink: 0; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0.5rem; box-shadow: var(--shadow); }
+    .saved-combo-card .thumb { position: relative; width: 80px; height: 80px; margin: 0 auto; }
+    .saved-combo-card .thumb .bg, .saved-combo-card .thumb .fg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+    .saved-combo-card .thumb .fg { object-fit: contain; z-index: 2; }
+    .saved-combo-card .label { font-size: 0.7rem; color: var(--text-secondary); margin: 0.35rem 0 0 0; text-align: center; line-height: 1.2; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+    .saved-combo-card .btn-remove { position: absolute; top: 2px; right: 2px; width: 20px; height: 20px; padding: 0; border: none; background: var(--surface); color: var(--text-secondary); border-radius: var(--radius-sm); cursor: pointer; font-size: 1rem; line-height: 1; z-index: 3; }
+    .saved-combo-card .btn-remove:hover { background: #fef2f2; color: #dc2626; }
     .searchable-wrap { position: relative; max-width: 18rem; }
     .searchable-wrap input[type=text] { width: 100%; padding: 0.4rem 0.6rem; font-size: 0.9375rem; border: 1px solid var(--border); border-radius: var(--radius-sm); box-sizing: border-box; }
     .searchable-dropdown { position: absolute; top: 100%; left: 0; right: 0; max-height: 10rem; overflow-y: auto; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); box-shadow: var(--shadow); z-index: 10; display: none; margin-top: 2px; }
@@ -48,13 +61,28 @@
     <div class="stage-tabs" id="stage-tabs" role="tablist"></div>
 </div>
 
-<div id="grid-container" class="tv-grid" style="display: none;"></div>
+<div id="travels-section" style="display: none;">
+        <h3 style="font-size: 1rem; margin: 0 0 0.5rem 0;">Travels</h3>
+        <div id="grid-container" class="tv-grid"></div>
+    </div>
+    <div id="trinket-travels-section" style="display: none;">
+        <h3 style="font-size: 1rem; margin: 1rem 0 0.5rem 0;">Trinket travels</h3>
+        <div id="trinket-grid-container" class="tv-grid"></div>
+    </div>
 <p class="tv-empty" id="no-selection-msg">Choose a creature above to see it with every travel.</p>
+
+<div class="saved-combos" id="saved-combos" style="margin-top: 2rem;">
+    <h3>Saved combinations</h3>
+    <p class="tv-empty" id="saved-none">No saved combinations yet. Click any creature+travel card above to save it.</p>
+    <div id="saved-combos-grid" class="saved-combos-grid" style="display: none;"></div>
+</div>
 
 <script>
 (function() {
     var creatures = @json($creaturesForJs);
     var travels = @json($travelsForJs);
+    var trinketTravels = @json($trinketTravelsForJs);
+    var allTravels = travels.concat(trinketTravels);
 
     var creatureInput = document.getElementById('creature-input');
     var creatureSlugEl = document.getElementById('creature-slug');
@@ -66,6 +94,7 @@
     var currentStageIndex = 0;
 
     function getCreature(slug) { return creatures.find(function(c) { return c.slug === slug; }); }
+    function getTravel(slug) { return allTravels.find(function(t) { return t.slug === slug; }); }
 
     function escapeHtml(s) { var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
 
@@ -139,12 +168,20 @@
         currentStageIndex = 0;
     }
 
+    var trinketGridContainer = document.getElementById('trinket-grid-container');
+    var travelsSection = document.getElementById('travels-section');
+    var trinketTravelsSection = document.getElementById('trinket-travels-section');
+
     function renderGrid() {
         var cSlug = creatureSlugEl.value;
         if (!cSlug) {
             gridContainer.style.display = 'none';
+            trinketGridContainer.style.display = 'none';
+            travelsSection.style.display = 'none';
+            trinketTravelsSection.style.display = 'none';
             noSelectionMsg.style.display = 'block';
             gridContainer.innerHTML = '';
+            trinketGridContainer.innerHTML = '';
             return;
         }
         var creature = getCreature(cSlug);
@@ -152,19 +189,88 @@
         var stage = (creature.stages || [])[currentStageIndex];
         if (!stage) {
             gridContainer.style.display = 'none';
+            trinketGridContainer.style.display = 'none';
+            travelsSection.style.display = 'none';
+            trinketTravelsSection.style.display = 'none';
             noSelectionMsg.style.display = 'block';
             gridContainer.innerHTML = '';
+            trinketGridContainer.innerHTML = '';
             return;
         }
         noSelectionMsg.style.display = 'none';
-        gridContainer.style.display = 'grid';
         var stageImg = stage.image_url ? '<img src="' + escapeHtml(stage.image_url) + '" alt="" loading="lazy" referrerpolicy="no-referrer">' : '';
+        var stageNum = stage.stage_number;
+        var cSlug = creature.slug;
+        var cTitle = creature.title;
         var html = '';
         travels.forEach(function(travel) {
             var travelBg = travel.image_url ? '<img src="' + escapeHtml(travel.image_url) + '" alt="" class="trinket-background" loading="lazy" referrerpolicy="no-referrer">' : '';
-            html += '<div class="tv-result-card"><div class="stage-image-wrapper">' + travelBg + stageImg + '</div><p class="travel-name">' + escapeHtml(travel.name) + '</p></div>';
+            html += '<div class="tv-result-card" data-creature-slug="' + escapeHtml(cSlug) + '" data-creature-title="' + escapeHtml(cTitle) + '" data-stage="' + stageNum + '" data-travel-slug="' + escapeHtml(travel.slug) + '" data-travel-name="' + escapeHtml(travel.name) + '" title="Click to save this combination"><div class="stage-image-wrapper">' + travelBg + stageImg + '</div><p class="travel-name">' + escapeHtml(travel.name) + '</p></div>';
         });
         gridContainer.innerHTML = html || '<p class="tv-empty">No travels.</p>';
+        html = '';
+        trinketTravels.forEach(function(travel) {
+            var travelBg = travel.image_url ? '<img src="' + escapeHtml(travel.image_url) + '" alt="" class="trinket-background" loading="lazy" referrerpolicy="no-referrer">' : '';
+            html += '<div class="tv-result-card" data-creature-slug="' + escapeHtml(cSlug) + '" data-creature-title="' + escapeHtml(cTitle) + '" data-stage="' + stageNum + '" data-travel-slug="' + escapeHtml(travel.slug) + '" data-travel-name="' + escapeHtml(travel.name) + '" title="Click to save this combination"><div class="stage-image-wrapper">' + travelBg + stageImg + '</div><p class="travel-name">' + escapeHtml(travel.name) + '</p></div>';
+        });
+        trinketGridContainer.innerHTML = html || '<p class="tv-empty">No trinket travels.</p>';
+        gridContainer.querySelectorAll('.tv-result-card').forEach(function(card) {
+            card.addEventListener('click', function() { saveComboFromCard(card); });
+        });
+        trinketGridContainer.querySelectorAll('.tv-result-card').forEach(function(card) {
+            card.addEventListener('click', function() { saveComboFromCard(card); });
+        });
+        travelsSection.style.display = 'block';
+        trinketTravelsSection.style.display = 'block';
+        gridContainer.style.display = 'grid';
+        trinketGridContainer.style.display = 'grid';
+    }
+
+    var SAVED_KEY = 'travel_viewer_saved';
+    var savedNone = document.getElementById('saved-none');
+    var savedGrid = document.getElementById('saved-combos-grid');
+
+    function getSaved() { try { var raw = localStorage.getItem(SAVED_KEY); return raw ? JSON.parse(raw) : []; } catch (e) { return []; } }
+    function setSaved(list) { try { localStorage.setItem(SAVED_KEY, JSON.stringify(list)); } catch (e) {} }
+    function saveComboFromCard(card) {
+        var list = getSaved();
+        list.push({
+            c: card.getAttribute('data-creature-slug'),
+            ct: card.getAttribute('data-creature-title'),
+            t: card.getAttribute('data-travel-slug'),
+            tn: card.getAttribute('data-travel-name'),
+            s: parseInt(card.getAttribute('data-stage'), 10)
+        });
+        setSaved(list);
+        renderSaved();
+    }
+    function removeSaved(index) {
+        var list = getSaved();
+        list.splice(index, 1);
+        setSaved(list);
+        renderSaved();
+    }
+    function renderSaved() {
+        var list = getSaved();
+        savedNone.style.display = list.length ? 'none' : 'block';
+        savedGrid.style.display = list.length ? 'flex' : 'none';
+        savedGrid.innerHTML = '';
+        list.forEach(function(item, i) {
+            var creature = getCreature(item.c);
+            var travel = getTravel(item.t);
+            var stage = (creature && creature.stages) ? creature.stages.find(function(s) { return s.stage_number === item.s; }) : null;
+            if (!stage && creature && creature.stages && creature.stages[0]) stage = creature.stages[0];
+            var stageImg = stage && stage.image_url ? escapeHtml(stage.image_url) : '';
+            var travelBg = travel && travel.image_url ? escapeHtml(travel.image_url) : '';
+            var card = document.createElement('div');
+            card.className = 'saved-combo-card';
+            card.innerHTML = '<button type="button" class="btn-remove" aria-label="Remove">×</button><div class="thumb">' +
+                (travelBg ? '<img class="bg" src="' + travelBg + '" alt="" referrerpolicy="no-referrer">' : '') +
+                (stageImg ? '<img class="fg" src="' + stageImg + '" alt="" referrerpolicy="no-referrer">' : '') +
+                '</div><p class="label">' + escapeHtml(item.ct) + ' + ' + escapeHtml(item.tn) + (item.s != null ? ' (Stage ' + item.s + ')' : '') + '</p>';
+            card.querySelector('.btn-remove').addEventListener('click', function() { removeSaved(i); });
+            savedGrid.appendChild(card);
+        });
     }
 
     buildSearchable('title', 'slug', creatures, creatureInput, creatureSlugEl, creatureDropdown, function() {
@@ -180,6 +286,7 @@
     }
     renderStageTabs(firstCreature ? getCreature(firstCreature.slug) : null);
     renderGrid();
+    renderSaved();
 })();
 </script>
 @endsection

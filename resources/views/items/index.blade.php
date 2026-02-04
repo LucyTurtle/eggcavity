@@ -5,12 +5,16 @@
 @section('content')
 <div class="page-header">
     <h1>Items</h1>
-    @if($shop || $use_type)
+    @if($shop || $use_type || $filter_retired || $filter_cavecash)
     <p class="lead">
         <span style="font-size: 0.9375rem;">
             @if($shop)Shop: <strong>{{ $shop }}</strong>@endif
-            @if($shop && $use_type) · @endif
+            @if($shop && ($use_type || $filter_retired || $filter_cavecash)) · @endif
             @if($use_type)Type: <strong>{{ ucfirst($use_type) }}</strong>@endif
+            @if($use_type && ($filter_retired || $filter_cavecash)) · @endif
+            @if($filter_retired)Retired only@endif
+            @if($filter_retired && $filter_cavecash) · @endif
+            @if($filter_cavecash)Cave cash only@endif
         </span>
     </p>
     @endif
@@ -121,13 +125,17 @@
     .items-pagination ul.pagination li.active span { background: var(--accent-muted); border-color: var(--accent); color: var(--accent); }
 </style>
 
-@if($shop || $use_type)
+@if($shop || $use_type || $filter_retired || $filter_cavecash)
     <div class="card" style="border-color: var(--accent); background: var(--accent-muted); margin-bottom: 1rem;">
         <p style="margin: 0;">
             @if($shop)Filtering by shop: <strong>{{ $shop }}</strong>@endif
-            @if($shop && $use_type) · @endif
+            @if($shop && ($use_type || $filter_retired || $filter_cavecash)) · @endif
             @if($use_type)Filtering by type: <strong>{{ ucfirst($use_type) }}</strong>@endif
-            <a href="{{ route('items.index', array_merge(request()->except(['shop', 'use_type']), ['sort' => $sort, 'dir' => $dir])) }}" style="margin-left: 0.5rem; color: var(--accent); font-weight: 500;">Clear filters</a>
+            @if($use_type && ($filter_retired || $filter_cavecash)) · @endif
+            @if($filter_retired)Retired only@endif
+            @if($filter_retired && $filter_cavecash) · @endif
+            @if($filter_cavecash)Cave cash only@endif
+            <a href="{{ route('items.index', array_merge(request()->except(['shop', 'use_type', 'retired', 'cavecash']), ['sort' => $sort, 'dir' => $dir])) }}" style="margin-left: 0.5rem; color: var(--accent); font-weight: 500;">Clear filters</a>
         </p>
     </div>
 @endif
@@ -136,6 +144,8 @@
     <input type="search" name="q" value="{{ old('q', $search) }}" placeholder="Search items..." aria-label="Search">
     @if($shop)<input type="hidden" name="shop" value="{{ $shop }}">@endif
     @if($use_type)<input type="hidden" name="use_type" value="{{ $use_type }}">@endif
+    @if($filter_retired)<input type="hidden" name="retired" value="1">@endif
+    @if($filter_cavecash)<input type="hidden" name="cavecash" value="1">@endif
     <input type="hidden" name="sort" value="{{ $sort }}">
     <input type="hidden" name="dir" value="{{ $dir }}">
     <button type="submit">Search</button>
@@ -159,6 +169,10 @@
         <option value="travel" {{ $use_type === 'travel' ? 'selected' : '' }}>Travel</option>
         <option value="other" {{ $use_type === 'other' ? 'selected' : '' }}>Other</option>
     </select>
+    <span style="margin-left: 0.5rem; display: inline-flex; align-items: center; gap: 0.5rem;">
+        <label style="font-size: 0.9375rem; color: var(--text-secondary); margin: 0;"><input type="checkbox" name="retired" value="1" {{ $filter_retired ? 'checked' : '' }} onchange="this.form.submit()"> Retired only</label>
+        <label style="font-size: 0.9375rem; color: var(--text-secondary); margin: 0;"><input type="checkbox" name="cavecash" value="1" {{ $filter_cavecash ? 'checked' : '' }} onchange="this.form.submit()"> Cave cash only</label>
+    </span>
     <label for="sort" style="font-size: 0.9375rem; color: var(--text-secondary); margin-left: 0.5rem;">Sort by</label>
     <select name="sort" id="sort" onchange="this.form.submit()">
         <option value="name" {{ $sort === 'name' ? 'selected' : '' }}>Name</option>

@@ -8,6 +8,53 @@
     <p class="lead">Admin area. You're signed in as <strong>{{ auth()->user()->name }}</strong> ({{ auth()->user()->role }}).</p>
 </div>
 
+<div class="card" style="margin-bottom: 1.5rem;">
+    <h2 style="font-size: 1.25rem; margin: 0 0 0.25rem 0;">Automatic jobs</h2>
+    <p class="lead" style="margin: 0 0 1rem 0; font-size: 0.9375rem;">Scheduled tasks run via the Laravel scheduler. Ensure cron runs <code>php artisan schedule:run</code> every minute.</p>
+    <table style="width: 100%; border-collapse: collapse; font-size: 0.9375rem;">
+        <thead>
+            <tr style="border-bottom: 1px solid var(--border);">
+                <th style="text-align: left; padding: 0.5rem 0.75rem 0.5rem 0; color: var(--text-secondary); font-weight: 600;">Command</th>
+                <th style="text-align: left; padding: 0.5rem 0.75rem; color: var(--text-secondary); font-weight: 600;">Description</th>
+                <th style="text-align: left; padding: 0.5rem 0.75rem; color: var(--text-secondary); font-weight: 600;">Schedule</th>
+                <th style="text-align: left; padding: 0.5rem 0 0.5rem 0.75rem; color: var(--text-secondary); font-weight: 600;">Next run</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach($scheduledJobs as $job)
+                <tr style="border-bottom: 1px solid var(--border);">
+                    <td style="padding: 0.5rem 0.75rem 0.5rem 0;"><code style="font-size: 0.875rem;">{{ $job['command'] }}</code></td>
+                    <td style="padding: 0.5rem 0.75rem; color: var(--text);">{{ $job['description'] }}</td>
+                    <td style="padding: 0.5rem 0.75rem; color: var(--text-secondary);">{{ $job['schedule'] }}</td>
+                    <td style="padding: 0.5rem 0 0.5rem 0.75rem; color: var(--text);">{{ $job['next_run']->format('D, M j, Y \a\t g:i A') }}</td>
+                </tr>
+            @endforeach
+        </tbody>
+    </table>
+</div>
+
+<div class="card" style="margin-bottom: 1.5rem;">
+    <h2 style="font-size: 1.25rem; margin: 0 0 0.25rem 0;">Run jobs manually</h2>
+    <p class="lead" style="margin: 0 0 1rem 0; font-size: 0.9375rem;">Schedule a job to run in the backend (not in the browser). It runs on the next scheduler tick, usually within a minute. Output is written to logs; refresh to see the latest.</p>
+    @foreach($jobLogs as $info)
+        <div class="manual-job-block" style="margin-bottom: 1.25rem; padding-bottom: 1.25rem; border-bottom: 1px solid var(--border);">
+            <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 0.5rem;">
+                <code style="font-size: 0.875rem;">{{ $info['command'] }}</code>
+                <span style="color: var(--text-secondary); font-size: 0.9375rem;">{{ $info['label'] }}</span>
+                <form method="post" action="{{ route('dashboard.run-job') }}" style="display: inline;">
+                    @csrf
+                    <input type="hidden" name="command" value="{{ $info['command'] }}">
+                    <button type="submit" class="btn" style="padding: 0.35rem 0.75rem; font-size: 0.875rem;">Run now</button>
+                </form>
+            </div>
+            <details style="font-size: 0.875rem;">
+                <summary style="cursor: pointer; color: var(--accent);">Last run output</summary>
+                <pre class="job-log-pre" style="margin: 0.5rem 0 0; padding: 0.75rem; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-sm); overflow: auto; max-height: 12rem; font-size: 0.8125rem; white-space: pre-wrap; word-break: break-all;">{{ $info['last_log'] ? e($info['last_log']) : '(No run yet)' }}</pre>
+            </details>
+        </div>
+    @endforeach
+</div>
+
 <div class="page-header" style="margin-top: 1.5rem;">
     <h2 style="font-size: 1.25rem; margin: 0 0 0.25rem 0;">Content</h2>
     <p class="lead" style="margin: 0;">Add creatures or items here. Edit them from their archive or item page.</p>
@@ -46,11 +93,20 @@
         <p>Suggest which travel items go with specific creature stages.</p>
         <a href="{{ route('content.travel-suggestions.index') }}" class="btn">Manage travel suggestions</a>
     </div>
+    <div class="content-hub-card">
+        <h3>Approve image-based suggestions</h3>
+        <p>Review and approve or reject travel suggestions from the image-match job before they go live.</p>
+        <a href="{{ route('content.pending-ai-travel-suggestions.index') }}" class="btn">Approve / reject suggestions</a>
+    </div>
 </div>
 
-@if(auth()->user()->isDeveloper() && $users->isNotEmpty())
+@if(auth()->user()->isDeveloper())
 <div class="card" style="margin-top: 1.5rem;">
-    <h3 style="margin: 0 0 0.75rem 0; font-size: 1rem;">View as user</h3>
+    <h3 style="margin: 0 0 0.75rem 0; font-size: 1rem;">User manager</h3>
+    <p style="margin: 0 0 0.75rem 0; font-size: 0.9375rem; color: var(--text-secondary);">Add users, change roles, ban, or reset passwords.</p>
+    <p style="margin: 0 0 0.75rem 0;"><a href="{{ route('users.index') }}" class="btn" style="display: inline-block; padding: 0.4rem 0.85rem; background: var(--accent); color: white; text-decoration: none; border-radius: var(--radius-sm); font-weight: 500; font-size: 0.9375rem;">User manager</a></p>
+    @if($users->isNotEmpty())
+    <h4 style="margin: 1rem 0 0.5rem 0; font-size: 0.9375rem;">View as user</h4>
     <p style="margin: 0 0 0.75rem 0; font-size: 0.9375rem; color: var(--text-secondary);">See the site as any user would. Click to start, then use "End impersonation" in the banner to return.</p>
     <ul style="margin: 0; padding-left: 1.25rem; list-style: none; padding-left: 0;">
         @foreach($users as $u)
@@ -63,6 +119,7 @@
             </li>
         @endforeach
     </ul>
+    @endif
 </div>
 @endif
 @endsection

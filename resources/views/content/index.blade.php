@@ -41,6 +41,11 @@
         <p>Suggest which travel items go with specific creature stages.</p>
         <a href="{{ route('content.travel-suggestions.index') }}" class="btn">Manage travel suggestions</a>
     </div>
+    <div class="content-hub-card">
+        <h3>Pending image-based suggestions</h3>
+        <p>Approve or reject travel suggestions from the image-match job (run <code>travels:suggest-by-image</code> from the dashboard to generate).</p>
+        <a href="{{ route('content.pending-ai-travel-suggestions.index') }}" class="btn">Pending travel suggestions</a>
+    </div>
 </div>
 
 <p style="margin-top: 1.5rem;"><a href="{{ route('dashboard') }}">← Back to dashboard</a></p>

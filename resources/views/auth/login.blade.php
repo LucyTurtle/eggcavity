@@ -20,10 +20,10 @@
     <form method="post" action="{{ route('login') }}">
         @csrf
         <div style="margin-bottom: 1rem;">
-            <label for="email" style="display: block; font-weight: 500; margin-bottom: 0.25rem; font-size: 0.9375rem;">Email</label>
-            <input type="email" name="email" id="email" value="{{ old('email') }}" required autofocus autocomplete="email"
+            <label for="login" style="display: block; font-weight: 500; margin-bottom: 0.25rem; font-size: 0.9375rem;">Email or username</label>
+            <input type="text" name="login" id="login" value="{{ old('login') }}" required autofocus autocomplete="username"
                 style="width: 100%; padding: 0.5rem 0.75rem; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 1rem;">
-            @error('email')
+            @error('login')
                 <p style="color: #dc2626; font-size: 0.875rem; margin: 0.25rem 0 0 0;">{{ $message }}</p>
             @enderror
         </div>
