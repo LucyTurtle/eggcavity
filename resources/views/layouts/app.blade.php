@@ -359,8 +359,10 @@
                         @auth
                             <div class="dropdown-header">{{ auth()->user()->name }}</div>
                             @if(auth()->user()->isAdmin() || auth()->user()->isDeveloper())
-                                <a href="{{ route('dashboard') }}" role="menuitem" @if(request()->routeIs('dashboard')) class="active" @endif>Dashboard</a>
-                                <a href="{{ route('content.index') }}" role="menuitem" @if(request()->routeIs('content.*')) class="active" @endif>Manage content</a>
+                                <a href="{{ route('dashboard') }}" role="menuitem" @if(request()->routeIs('dashboard')) class="active"
+                                @endif>Dashboard</a>
+                                <a href="{{ route('content.index') }}" role="menuitem" @if(request()->routeIs('content.*')) class="active"
+                                @endif>Manage content</a>
                             @endif
                             <a href="{{ route('account') }}" role="menuitem">Manage account</a>
                             <div class="dropdown-divider"></div>
@@ -369,27 +371,38 @@
                                 <button type="submit" role="menuitem">Log out</button>
                             </form>
                         @else
-                            <a href="{{ route('login') }}" role="menuitem" @if(request()->routeIs('login')) class="active" @endif>Log in</a>
-                            <a href="{{ route('register') }}" role="menuitem" @if(request()->routeIs('register')) class="active" @endif>Register</a>
+                            <a href="{{ route('login') }}" role="menuitem" @if(request()->routeIs('login')) class="active"
+                            @endif>Log in</a>
+                            <a href="{{ route('register') }}" role="menuitem" @if(request()->routeIs('register')) class="active"
+                            @endif>Register</a>
                         @endauth
                     </div>
                 </div>
             </div>
             <nav>
-                <a href="{{ route('home') }}" @if(request()->routeIs('home')) class="active" @endif>Home</a>
-                <a href="{{ route('archive.index') }}" @if(request()->routeIs('archive.*')) class="active" @endif>Archive</a>
-                <a href="{{ route('items.index') }}" @if(request()->routeIs('items.*')) class="active" @endif>Items</a>
+                <a href="{{ route('home') }}" @if(request()->routeIs('home')) class="active"
+                @endif>Home</a>
+                <a href="{{ route('archive.index') }}" @if(request()->routeIs('archive.*')) class="active"
+                @endif>Archive</a>
+                <a href="{{ route('items.index') }}" @if(request()->routeIs('items.*')) class="active"
+                @endif>Items</a>
                 @auth
-                    <a href="{{ route('wishlists.index') }}" @if(request()->routeIs('wishlists.*')) class="active" @endif>Wishlist</a>
+                    <a href="{{ route('wishlists.index') }}" @if(request()->routeIs('wishlists.*')) class="active"
+                    @endif>Wishlist</a>
                 @else
-                    <a href="{{ route('login', ['from' => 'wishlist']) }}" @if(request()->routeIs('login')) class="active" @endif>Wishlist</a>
+                    <a href="{{ route('login', ['from' => 'wishlist']) }}" @if(request()->routeIs('login')) class="active"
+                @endif>Wishlist</a>
                 @endauth
                 <div class="nav-dropdown">
-                    <button type="button" class="nav-dropdown-trigger" @if(request()->routeIs('travel-viewer.*') || request()->routeIs('archive.creature-travels') || request()->routeIs('items.travel-on-creatures')) class="active" @endif>Travel Viewer ▾</button>
+                    <button type="button" class="nav-dropdown-trigger" @if(request()->routeIs('travel-viewer.*') || request()->routeIs('archive.creature-travels') || request()->routeIs('items.travel-on-creatures')) class="active"
+                    @endif>Travel Viewer ▾</button>
                     <div class="nav-dropdown-menu">
-                        <a href="{{ route('travel-viewer.index') }}" @if(request()->routeIs('travel-viewer.index')) class="active" @endif>Simple viewer</a>
-                        <a href="{{ route('travel-viewer.by-creature') }}" @if(request()->routeIs('travel-viewer.by-creature')) class="active" @endif>By creature</a>
-                        <a href="{{ route('travel-viewer.by-travel') }}" @if(request()->routeIs('travel-viewer.by-travel')) class="active" @endif>By travel</a>
+                        <a href="{{ route('travel-viewer.index') }}" @if(request()->routeIs('travel-viewer.index')) class="active"
+                        @endif>Simple viewer</a>
+                        <a href="{{ route('travel-viewer.by-creature') }}" @if(request()->routeIs('travel-viewer.by-creature')) class="active"
+                        @endif>By creature</a>
+                        <a href="{{ route('travel-viewer.by-travel') }}" @if(request()->routeIs('travel-viewer.by-travel')) class="active"
+                        @endif>By travel</a>
                     </div>
                 </div>
                 <a href="https://eggcave.com" target="_blank" rel="noopener" class="External">EggCave.com →</a>
