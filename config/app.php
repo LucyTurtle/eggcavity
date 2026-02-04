@@ -5,6 +5,10 @@ return [
     'env' => env('APP_ENV', 'production'),
     'debug' => (bool) env('APP_DEBUG', false),
     'url' => env('APP_URL', 'http://localhost'),
+
+    // Canonical base URL for links/redirects (e.g. https://eggcavity.com). When set, nav and
+    // redirects use this instead of the request host so the IP is never shown.
+    'canonical_url' => env('APP_CANONICAL_URL', env('APP_URL')),
     'timezone' => env('APP_TIMEZONE', 'UTC'),
     'locale' => env('APP_LOCALE', 'en'),
     'fallback_locale' => env('APP_FALLBACK_LOCALE', 'en'),
