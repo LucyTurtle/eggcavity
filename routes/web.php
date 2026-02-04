@@ -78,9 +78,6 @@ Route::middleware('auth')->group(function () {
     Route::post('/wishlist/creatures/batch', [WishlistController::class, 'storeCreatures'])->name('wishlist.creatures.store');
     Route::post('/wishlist/items/batch', [WishlistController::class, 'storeItems'])->name('wishlist.items.store');
     Route::post('/wishlist/travels/batch', [WishlistController::class, 'storeTravels'])->name('wishlist.travels.store');
-    Route::post('/wishlists/share/enable', [WishlistController::class, 'shareEnable'])->name('wishlists.share.enable');
-    Route::post('/wishlists/share/regenerate', [WishlistController::class, 'shareRegenerate'])->name('wishlists.share.regenerate');
-    Route::post('/wishlists/share/disable', [WishlistController::class, 'shareDisable'])->name('wishlists.share.disable');
     Route::post('/wishlist/creatures', [WishlistController::class, 'storeCreature'])->name('wishlist.creature.store');
     Route::put('/wishlist/creatures/{creatureWishlist}', [WishlistController::class, 'updateCreature'])->name('wishlist.creature.update');
     Route::delete('/wishlist/creatures/{creatureWishlist}', [WishlistController::class, 'removeCreature'])->name('wishlist.creature.remove');
@@ -92,8 +89,8 @@ Route::middleware('auth')->group(function () {
     Route::delete('/wishlist/travels/{travelWishlist}', [WishlistController::class, 'removeTravel'])->name('wishlist.travel.remove');
 });
 
-// Public shared wishlists (by username slug; must be after auth routes so /wishlists/add/* is matched first)
-Route::get('/wishlists/{slug}/creatures', [WishlistController::class, 'showSharedCreatures'])->name('wishlists.shared.creatures');
-Route::get('/wishlists/{slug}/items', [WishlistController::class, 'showSharedItems'])->name('wishlists.shared.items');
-Route::get('/wishlists/{slug}/travels', [WishlistController::class, 'showSharedTravels'])->name('wishlists.shared.travels');
-Route::get('/wishlists/{slug}', [WishlistController::class, 'showShared'])->name('wishlists.shared');
+// Public shared wishlists (by user id; /wishlists/add/* is matched first)
+Route::get('/wishlists/{user:id}/creatures', [WishlistController::class, 'showSharedCreatures'])->name('wishlists.shared.creatures');
+Route::get('/wishlists/{user:id}/items', [WishlistController::class, 'showSharedItems'])->name('wishlists.shared.items');
+Route::get('/wishlists/{user:id}/travels', [WishlistController::class, 'showSharedTravels'])->name('wishlists.shared.travels');
+Route::get('/wishlists/{user:id}', [WishlistController::class, 'showShared'])->name('wishlists.shared');

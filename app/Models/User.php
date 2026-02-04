@@ -16,7 +16,6 @@ class User extends Authenticatable
         'email',
         'password',
         'role',
-        'wishlist_share_slug',
     ];
 
     protected $hidden = [
@@ -26,38 +25,22 @@ class User extends Authenticatable
 
     public function getWishlistShareUrlAttribute(): ?string
     {
-        if (! $this->wishlist_share_slug) {
-            return null;
-        }
-
-        return route('wishlists.shared', ['slug' => $this->wishlist_share_slug]);
+        return route('wishlists.shared', ['user' => $this->id]);
     }
 
     public function getWishlistShareCreaturesUrlAttribute(): ?string
     {
-        if (! $this->wishlist_share_slug) {
-            return null;
-        }
-
-        return route('wishlists.shared.creatures', ['slug' => $this->wishlist_share_slug]);
+        return route('wishlists.shared.creatures', ['user' => $this->id]);
     }
 
     public function getWishlistShareItemsUrlAttribute(): ?string
     {
-        if (! $this->wishlist_share_slug) {
-            return null;
-        }
-
-        return route('wishlists.shared.items', ['slug' => $this->wishlist_share_slug]);
+        return route('wishlists.shared.items', ['user' => $this->id]);
     }
 
     public function getWishlistShareTravelsUrlAttribute(): ?string
     {
-        if (! $this->wishlist_share_slug) {
-            return null;
-        }
-
-        return route('wishlists.shared.travels', ['slug' => $this->wishlist_share_slug]);
+        return route('wishlists.shared.travels', ['user' => $this->id]);
     }
 
     protected function casts(): array

@@ -6,9 +6,9 @@
 <div class="page-header">
     <h1>{{ $owner->name }}'s wishlists</h1>
     <p style="font-size: 0.9375rem; margin-top: 0.5rem;">
-        <a href="{{ route('wishlists.shared.creatures', ['slug' => $owner->wishlist_share_slug]) }}">Creature wishlist</a>
-        · <a href="{{ route('wishlists.shared.items', ['slug' => $owner->wishlist_share_slug]) }}">Item wishlist</a>
-        · <a href="{{ route('wishlists.shared.travels', ['slug' => $owner->wishlist_share_slug]) }}">Travel wishlist</a>
+        <a href="{{ route('wishlists.shared.creatures', ['user' => $owner->id]) }}">Creature wishlist</a>
+        · <a href="{{ route('wishlists.shared.items', ['user' => $owner->id]) }}">Item wishlist</a>
+        · <a href="{{ route('wishlists.shared.travels', ['user' => $owner->id]) }}">Travel wishlist</a>
     </p>
 </div>
 
