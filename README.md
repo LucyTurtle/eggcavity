@@ -58,6 +58,7 @@ For the site to work over HTTPS:
    - `APP_URL=https://your-domain.com` (or `https://YOUR_SERVER_IP` if you have no domain). Must use `https://`.
    - `APP_CANONICAL_URL=https://your-domain.com` — use your real domain here so nav and redirects never use the server IP. (Defaults to `APP_URL` if unset.)
    - `SESSION_SECURE_COOKIE=true` so session cookies are sent only over HTTPS.
+   - `SESSION_DOMAIN=.your-domain.com` (leading dot) so the session cookie is sent for your domain and login persists after redirect (e.g. after login you stay on the site instead of ending up back on /login).
 
 2. **SSL on the server** — Your web server (e.g. nginx, Apache, Caddy) must:
 
@@ -67,6 +68,48 @@ For the site to work over HTTPS:
      - (and typically `X-Forwarded-For` / `Host` as well.)
 
    The app trusts proxy headers and forces HTTPS when `APP_URL` starts with `https://`.
+
+## Production: SQLite permissions
+
+If you see **"attempt to write a readonly database"** (e.g. when registering or logging in), the PHP process user (e.g. `www-data`, `nginx`) cannot write to the SQLite file or its directory.
+
+**Fix on the server:**
+
+1. **Find the real database path** — On the server, the file might not be at `database/database.sqlite` (e.g. if `DB_DATABASE` is set in `.env`). From the project root:
+
+   ```bash
+   cd /path/to/your/app
+   php artisan tinker --execute="echo config('database.connections.sqlite.database');"
+   ```
+
+   Or check the server’s `.env` for `DB_DATABASE`. Note the path it prints (e.g. `/var/www/eggcavity/storage/app/database.sqlite`).
+
+2. **Make that path writable** — Use the path from step 1. Replace `www-data` with your PHP user (e.g. `nginx`, `apache`):
+
+   ```bash
+   # If the DB is at the default project path:
+   sudo chown -R www-data:www-data database storage bootstrap/cache
+   sudo chmod -R 775 database storage bootstrap/cache
+   ```
+
+   If the DB is elsewhere (e.g. `storage/app/database.sqlite`), make that file and its directory writable:
+
+   ```bash
+   sudo chown www-data:www-data /path/from/step/1
+   sudo chmod 664 /path/from/step/1
+   sudo chown www-data:www-data /path/to/parent/dir
+   sudo chmod 775 /path/to/parent/dir
+   ```
+
+3. If your deploy user is different from the web server user, run the `chown`/`chmod` after deploy so the web server can write.
+
+**If the database file doesn’t exist yet** (new server): create it at the path your app will use, then migrate and set permissions:
+
+   ```bash
+   touch database/database.sqlite   # or the path you set in DB_DATABASE
+   php artisan migrate
+   sudo chown -R www-data:www-data database storage bootstrap/cache
+   ```
 
 ## Optional: MySQL
 

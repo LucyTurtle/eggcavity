@@ -10,7 +10,6 @@ use App\Models\TravelWishlist;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
 class WishlistController extends Controller
@@ -18,8 +17,6 @@ class WishlistController extends Controller
     public function index()
     {
         $user = Auth::user();
-        $this->ensureWishlistShareSlug($user);
-        $user->refresh();
 
         $creatureWishlists = $user->creatureWishlists()->with('archiveItem')->orderBy('created_at', 'desc')->get();
         $itemWishlists = $user->itemWishlists()->with('item')->orderBy('created_at', 'desc')->get();
@@ -36,43 +33,9 @@ class WishlistController extends Controller
         ]);
     }
 
-    private function ensureWishlistShareSlug(User $user): void
+    public function showShared(User $user)
     {
-        if ($user->wishlist_share_slug) {
-            return;
-        }
-        $baseSlug = Str::slug($user->name);
-        if (empty($baseSlug)) {
-            $baseSlug = 'user';
-        }
-        $slug = $baseSlug;
-        $n = 1;
-        while (User::where('wishlist_share_slug', $slug)->where('id', '!=', $user->id)->exists()) {
-            $slug = $baseSlug . '-' . (++$n);
-        }
-        $user->update(['wishlist_share_slug' => $slug]);
-    }
-
-    private const RESERVED_SHARE_SLUGS = ['add', 'share'];
-
-    private function findOwnerByShareSlug(string $slug): User
-    {
-        if (in_array($slug, self::RESERVED_SHARE_SLUGS, true)) {
-            abort(404, 'This wishlist link is invalid or has been disabled.');
-        }
-
-        $owner = User::where('wishlist_share_slug', $slug)->first();
-
-        if (! $owner) {
-            abort(404, 'This wishlist link is invalid or has been disabled.');
-        }
-
-        return $owner;
-    }
-
-    public function showShared(string $slug)
-    {
-        $owner = $this->findOwnerByShareSlug($slug);
+        $owner = $user;
         $creatureWishlists = $owner->creatureWishlists()->with('archiveItem')->orderBy('created_at', 'desc')->get();
         $itemWishlists = $owner->itemWishlists()->with('item')->orderBy('created_at', 'desc')->get();
         $travelWishlists = $owner->travelWishlists()->with('item')->orderBy('created_at', 'desc')->get();
@@ -85,9 +48,9 @@ class WishlistController extends Controller
         ]);
     }
 
-    public function showSharedCreatures(string $slug)
+    public function showSharedCreatures(User $user)
     {
-        $owner = $this->findOwnerByShareSlug($slug);
+        $owner = $user;
         $creatureWishlists = $owner->creatureWishlists()->with('archiveItem')->orderBy('created_at', 'desc')->get();
 
         return view('wishlists.shared-creatures', [
@@ -96,9 +59,9 @@ class WishlistController extends Controller
         ]);
     }
 
-    public function showSharedItems(string $slug)
+    public function showSharedItems(User $user)
     {
-        $owner = $this->findOwnerByShareSlug($slug);
+        $owner = $user;
         $itemWishlists = $owner->itemWishlists()->with('item')->orderBy('created_at', 'desc')->get();
 
         return view('wishlists.shared-items', [
@@ -107,44 +70,15 @@ class WishlistController extends Controller
         ]);
     }
 
-    public function showSharedTravels(string $slug)
+    public function showSharedTravels(User $user)
     {
-        $owner = $this->findOwnerByShareSlug($slug);
+        $owner = $user;
         $travelWishlists = $owner->travelWishlists()->with('item')->orderBy('created_at', 'desc')->get();
 
         return view('wishlists.shared-travels', [
             'owner' => $owner,
             'travelWishlists' => $travelWishlists,
         ]);
-    }
-
-    public function shareEnable(Request $request)
-    {
-        $user = Auth::user();
-        $this->ensureWishlistShareSlug($user);
-        return redirect()->route('wishlists.index')->with('success', 'Your wishlists are shared at /wishlists/' . $user->fresh()->wishlist_share_slug);
-    }
-
-    public function shareRegenerate(Request $request)
-    {
-        $user = Auth::user();
-        $baseSlug = Str::slug($user->name);
-        if (empty($baseSlug)) {
-            $baseSlug = 'user';
-        }
-        $slug = $baseSlug;
-        $n = 1;
-        while (User::where('wishlist_share_slug', $slug)->where('id', '!=', $user->id)->exists()) {
-            $slug = $baseSlug . '-' . (++$n);
-        }
-        $user->update(['wishlist_share_slug' => $slug]);
-        return redirect()->route('wishlists.index')->with('success', 'Share link updated. Your wishlists are viewable at /wishlists/' . $slug);
-    }
-
-    public function shareDisable(Request $request)
-    {
-        Auth::user()->update(['wishlist_share_slug' => null]);
-        return redirect()->route('wishlists.index')->with('success', 'Share link disabled. Your wishlists are no longer viewable via link.');
     }
 
     public function showAddCreatures(Request $request)
