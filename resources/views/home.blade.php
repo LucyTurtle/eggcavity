@@ -5,6 +5,7 @@
 @section('content')
 <div class="card" style="border-color: #dc2626; background: #fef2f2; margin-bottom: 1.5rem;">
     <p style="margin: 0; color: #b91c1c; font-weight: 600;">All previous data was lost. Users will need to create a new account.</p>
+    <p style="margin: 0.5rem 0 0 0; color: #b91c1c;">Everything on this site is 100% new code — we lost everything and rebuilt from scratch.</p>
 </div>
 <div class="page-header">
     <p class="lead">The EggCave community site. Links, resources, and a home for fans.</p>

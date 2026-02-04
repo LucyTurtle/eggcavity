@@ -420,6 +420,7 @@
         <div class="wrap">
             EggCave and related content are property of their respective owners.
             <br><a href="https://eggcave.com" target="_blank" rel="noopener">EggCave.com</a>
+            <br><span style="font-size: 0.875rem; color: var(--text-secondary);">Contact: DM me on Eggcave — <a href="https://eggcave.com/{{ '@' }}lbowe_elbow" target="_blank" rel="noopener" style="color: var(--accent);">@lbowe_elbow</a></span>
         </div>
     </footer>
 </body>
