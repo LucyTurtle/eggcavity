@@ -5,13 +5,26 @@
 @section('content')
 <div class="page-header">
     <h1>Travel viewer</h1>
-    <p class="lead">Select a creature and a travel to see the travel on every stage. Any travel can be shown on any creature.</p>
+    <p class="lead">Select a creature and a travel to see the travel on every stage.</p>
 </div>
 
 <style>
     .travel-viewer-result { margin-bottom: 1.5rem; }
-    .travel-viewer-result .pairs-grid { margin-bottom: 1rem; display: flex; flex-wrap: wrap; gap: 0.35rem; }
-    .travel-viewer-result .pair-card { margin: 0; padding: 0; border: none; background: none; }
+    .travel-viewer-result .pairs-grid {
+        margin-bottom: 1rem;
+        display: flex;
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 0.35rem;
+        align-items: flex-start;
+    }
+    .travel-viewer-result .pair-card {
+        margin: 0;
+        padding: 0;
+        border: none;
+        background: none;
+        flex: 0 0 auto;
+    }
     .travel-viewer-result .stage-image-wrapper {
         position: relative;
         width: 90px;
@@ -169,7 +182,7 @@
             return;
         }
         noSelectionMsg.style.display = 'none';
-        pairsContainer.style.display = 'grid';
+        pairsContainer.style.display = 'flex';
         var stages = creature.stages || [];
 
         var html = '';

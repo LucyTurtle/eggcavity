@@ -10,18 +10,20 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg: #fafafa;
+            --bg: #f4f9f5;
+            --bg-subtle: #eef5ef;
             --surface: #ffffff;
-            --border: #e5e7eb;
-            --text: #111827;
-            --text-secondary: #6b7280;
-            --accent: #4f46e5;
-            --accent-hover: #4338ca;
-            --accent-muted: #eef2ff;
-            --radius: 12px;
-            --radius-sm: 8px;
-            --shadow: 0 1px 3px rgba(0,0,0,0.06);
-            --shadow-lg: 0 4px 6px -1px rgba(0,0,0,0.07), 0 2px 4px -2px rgba(0,0,0,0.05);
+            --border: #dce8de;
+            --border-soft: #e6efe7;
+            --text: #1a2e1d;
+            --text-secondary: #4a5d4c;
+            --accent: #2d7a3e;
+            --accent-hover: #236532;
+            --accent-muted: #dcfce7;
+            --radius: 14px;
+            --radius-sm: 10px;
+            --shadow: 0 1px 3px rgba(26,46,29,0.06), 0 1px 2px rgba(26,46,29,0.04);
+            --shadow-lg: 0 4px 14px rgba(26,46,29,0.08), 0 2px 6px rgba(26,46,29,0.04);
         }
         * { box-sizing: border-box; }
         body {
@@ -29,6 +31,9 @@
             min-height: 100vh;
             font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
             background: var(--bg);
+            background-image: radial-gradient(ellipse 120% 80% at 50% -20%, rgba(220,252,231,0.5), transparent 50%),
+                radial-gradient(circle at 80% 50%, rgba(220,252,231,0.2), transparent 35%);
+            background-attachment: fixed;
             color: var(--text);
             line-height: 1.65;
             font-size: 15px;
@@ -42,6 +47,7 @@
             padding: 1.75rem 0;
             border-bottom: 1px solid var(--border);
             background: var(--surface);
+            box-shadow: 0 1px 0 var(--border-soft);
         }
         .site-header .wrap {
             display: flex;
@@ -231,7 +237,7 @@
             margin: 0.25rem 0;
         }
         main { padding: 2.5rem 0 4rem; }
-        main .page-header { margin-bottom: 1.75rem; }
+        main .page-header { padding-top: 1.5rem; margin-bottom: 1.75rem; }
         main h1 {
             font-size: 1.75rem;
             font-weight: 700;
@@ -264,7 +270,9 @@
             padding: 1.25rem 1.5rem;
             margin: 1rem 0;
             box-shadow: var(--shadow);
+            transition: box-shadow 0.2s ease, border-color 0.2s ease;
         }
+        .card:hover { box-shadow: var(--shadow-lg); }
         .card h3 {
             font-size: 1rem;
             font-weight: 600;
@@ -321,9 +329,13 @@
         .mascot-block .mascot-fallback { display: flex; align-items: center; justify-content: center; font-size: 1rem; font-weight: 600; color: var(--accent); position: absolute; inset: 0; }
         .mascot-block .mascot-body h3 { margin: 0 0 0.25rem 0; }
         .mascot-block .mascot-body p { margin: 0; font-size: 0.9375rem; }
+        body.body-bg-white {
+            background: #ffffff;
+            background-image: none;
+        }
     </style>
 </head>
-<body>
+<body class="@yield('bodyClass')">
     <header class="site-header">
         <div class="wrap">
             <div class="header-row">
@@ -343,7 +355,6 @@
                                 <a href="{{ route('content.index') }}" role="menuitem" @if(request()->routeIs('content.*')) class="active" @endif>Manage content</a>
                             @endif
                             <a href="{{ route('account') }}" role="menuitem">Manage account</a>
-                            <a href="{{ route('wishlists.index') }}" role="menuitem" @if(request()->routeIs('wishlists.*')) class="active" @endif>Wishlists</a>
                             <div class="dropdown-divider"></div>
                             <form method="post" action="{{ route('logout') }}" style="margin: 0;">
                                 @csrf
@@ -360,6 +371,11 @@
                 <a href="{{ route('home') }}" @if(request()->routeIs('home')) class="active" @endif>Home</a>
                 <a href="{{ route('archive.index') }}" @if(request()->routeIs('archive.*')) class="active" @endif>Archive</a>
                 <a href="{{ route('items.index') }}" @if(request()->routeIs('items.*')) class="active" @endif>Items</a>
+                @auth
+                    <a href="{{ route('wishlists.index') }}" @if(request()->routeIs('wishlists.*')) class="active" @endif>Wishlist</a>
+                @else
+                    <a href="{{ route('login', ['from' => 'wishlist']) }}" @if(request()->routeIs('login')) class="active" @endif>Wishlist</a>
+                @endauth
                 <div class="nav-dropdown">
                     <button type="button" class="nav-dropdown-trigger" @if(request()->routeIs('travel-viewer.*') || request()->routeIs('archive.creature-travels') || request()->routeIs('items.travel-on-creatures')) class="active" @endif>Travel Viewer ▾</button>
                     <div class="nav-dropdown-menu">

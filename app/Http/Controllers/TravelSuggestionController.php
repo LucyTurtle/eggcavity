@@ -16,7 +16,7 @@ class TravelSuggestionController extends Controller
         $suggestions = TravelSuggestion::with(['archiveStage.archiveItem', 'item'])
             ->orderBy('archive_stage_id')
             ->orderBy('sort_order')
-            ->get();
+            ->paginate(100);
 
         return view('content.travel-suggestions.index', [
             'suggestions' => $suggestions,

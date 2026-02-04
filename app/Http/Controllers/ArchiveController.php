@@ -4,13 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Models\ArchiveItem;
 use App\Models\Item;
+use App\Models\TravelSuggestion;
 use Illuminate\Http\Request;
 
 class ArchiveController extends Controller
 {
     public function index(Request $request)
     {
-        $query = ArchiveItem::query();
+        $query = ArchiveItem::with('images');
 
         // Search: title or description
         if ($search = $request->filled('q') ? $request->q : null) {
@@ -31,7 +32,7 @@ class ArchiveController extends Controller
         if (!in_array($dir, ['asc', 'desc'])) {
             $dir = 'asc';
         }
-        $allowedSort = ['title', 'published_at', 'sort_order', 'created_at'];
+        $allowedSort = ['title', 'published_at', 'created_at'];
         if (in_array($sort, $allowedSort)) {
             $query->orderBy($sort, $dir);
         } else {
@@ -52,30 +53,88 @@ class ArchiveController extends Controller
     public function show(string $slug)
     {
         $item = ArchiveItem::where('slug', $slug)->with(['images', 'stages.travelSuggestions.item'])->firstOrFail();
-        
-        // Find trinket travels for this creature's stages
-        // Pattern: "{CreatureName} Stage {Number}" like "Kittynk Stage 3" or "13 Prints Kittynk Stage 3"
+        [$trinketTravels, $recommendedTravels] = $this->computeRecommendedTravels($item);
+
+        $user = request()->user();
+        $canApplyRecommendations = $user && ($user->hasRole('admin') || $user->hasRole('developer'));
+
+        return view('archive.show', [
+            'item' => $item,
+            'trinketTravels' => $trinketTravels,
+            'recommendedTravels' => $recommendedTravels,
+            'canApplyRecommendations' => $canApplyRecommendations,
+        ]);
+    }
+
+    /**
+     * Apply the current recommended travels (trinket + manual suggestions) as travel_suggestions for every stage.
+     * Admin/developer only.
+     */
+    public function applyRecommendedToAllStages(Request $request, string $slug)
+    {
+        $item = ArchiveItem::where('slug', $slug)->with(['stages.travelSuggestions.item'])->firstOrFail();
+        [$trinketTravels, $recommendedTravels] = $this->computeRecommendedTravels($item);
+
+        $travelIds = $request->input('travel_ids', []);
+        if (!is_array($travelIds)) {
+            $travelIds = [];
+        }
+        $travelIds = array_filter(array_map('intval', $travelIds));
+
+        if (empty($travelIds)) {
+            if ($request->expectsJson()) {
+                return response()->json(['success' => false, 'message' => 'No travels selected'], 400);
+            }
+            return redirect()->route('archive.show', $item->slug);
+        }
+
+        $travelIdsSet = array_flip($travelIds);
+        $allowedInOrder = [];
+        foreach ($recommendedTravels as $t) {
+            if (isset($travelIdsSet[$t->id])) {
+                $allowedInOrder[] = $t->id;
+            }
+        }
+
+        foreach ($item->stages as $stage) {
+            $stage->travelSuggestions()->delete();
+            foreach ($allowedInOrder as $sortOrder => $itemId) {
+                TravelSuggestion::create([
+                    'archive_stage_id' => $stage->id,
+                    'item_id' => $itemId,
+                    'sort_order' => $sortOrder,
+                ]);
+            }
+        }
+
+        if ($request->expectsJson()) {
+            return response()->json(['success' => true]);
+        }
+        return redirect()->route('archive.show', $item->slug);
+    }
+
+    /**
+     * @return array{0: array<int, \App\Models\Item>, 1: list<\App\Models\Item>}
+     */
+    private function computeRecommendedTravels(ArchiveItem $item): array
+    {
         $creatureName = $item->title;
         $trinketTravels = [];
         $recommendedTravels = [];
-        
+
         foreach ($item->stages as $stage) {
-            // Look for items matching "{creatureName} Stage {stageNumber}" (case-insensitive, with or without prefix)
-            // Pattern: "%Kittynk Stage 3%" or "%kittynk stage 3%"
             $pattern = '%' . $creatureName . ' Stage ' . $stage->stage_number . '%';
             $trinketItem = Item::where('use', 'travel')
                 ->whereRaw('LOWER(name) LIKE ?', [strtolower($pattern)])
                 ->first();
-            
+
             if ($trinketItem) {
                 $trinketTravels[$stage->id] = $trinketItem;
-                // Add to recommended travels if not already added (by slug to avoid duplicates)
                 if (!isset($recommendedTravels[$trinketItem->slug])) {
                     $recommendedTravels[$trinketItem->slug] = $trinketItem;
                 }
             }
 
-            // Add suggested travels for this stage
             foreach ($stage->travelSuggestions as $suggestion) {
                 $suggestedTravel = $suggestion->item;
                 if ($suggestedTravel && !isset($recommendedTravels[$suggestedTravel->slug])) {
@@ -83,12 +142,8 @@ class ArchiveController extends Controller
                 }
             }
         }
-        
-        return view('archive.show', [
-            'item' => $item,
-            'trinketTravels' => $trinketTravels,
-            'recommendedTravels' => array_values($recommendedTravels),
-        ]);
+
+        return [$trinketTravels, array_values($recommendedTravels)];
     }
 
     /**

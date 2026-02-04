@@ -33,16 +33,6 @@
             <button type="button" class="btn-copy" data-copy-target="share-travels-input" style="padding: 0.4rem 0.75rem; font-size: 0.875rem; background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: var(--radius-sm); cursor: pointer; font-family: inherit;">Copy link</button>
         </div>
     </div>
-    <div style="margin-top: 0.75rem; display: flex; flex-wrap: wrap; gap: 0.5rem;">
-        <form method="post" action="{{ route('wishlists.share.regenerate') }}" style="margin: 0; display: inline;">
-            @csrf
-            <button type="submit" style="padding: 0.4rem 0.75rem; font-size: 0.875rem; background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: var(--radius-sm); cursor: pointer; font-family: inherit;">Regenerate link</button>
-        </form>
-        <form method="post" action="{{ route('wishlists.share.disable') }}" style="margin: 0; display: inline;" onsubmit="return confirm('Disable the share link? The current link will stop working.');">
-            @csrf
-            <button type="submit" style="padding: 0.4rem 0.75rem; font-size: 0.875rem; color: #dc2626; background: none; border: 1px solid #dc2626; border-radius: var(--radius-sm); cursor: pointer; font-family: inherit;">Disable link</button>
-        </form>
-    </div>
 </div>
 
 <script>
@@ -159,11 +149,11 @@ document.querySelectorAll('.btn-copy').forEach(function(btn) {
                                 <div class="form-row">
                                     <label>Gender</label>
                                     <select name="gender">
-                                        <option value="">— No preference —</option>
+                                        <option value="no_preference" {{ in_array($entry->gender, [null, '', 'no_preference'], true) ? 'selected' : '' }}>No preference</option>
+                                        <option value="">—</option>
                                         <option value="male" {{ $entry->gender === 'male' ? 'selected' : '' }}>Male</option>
                                         <option value="female" {{ $entry->gender === 'female' ? 'selected' : '' }}>Female</option>
                                         <option value="non-binary" {{ $entry->gender === 'non-binary' ? 'selected' : '' }}>Non-binary</option>
-                                        <option value="no_preference" {{ $entry->gender === 'no_preference' ? 'selected' : '' }}>No preference</option>
                                     </select>
                                 </div>
                                 <div class="form-row">

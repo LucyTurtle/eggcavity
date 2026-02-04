@@ -3,6 +3,14 @@
 @section('title', 'Log in')
 
 @section('content')
+<div class="card" style="max-width: 400px; margin-bottom: 1rem; border-color: #dc2626; background: #fef2f2;">
+    <p style="margin: 0; color: #b91c1c; font-weight: 600;">All previous data was lost. You will need to create a new account.</p>
+</div>
+@if(request('from') === 'wishlist')
+    <div class="card" style="max-width: 400px; margin-bottom: 1rem; border-color: var(--accent); background: var(--accent-muted);">
+        <p style="margin: 0; font-weight: 500;">Please log in to use the wishlist.</p>
+    </div>
+@endif
 <div class="page-header">
     <h1>Log in</h1>
     <p class="lead">Sign in to your eggcavity account.</p>

@@ -100,9 +100,13 @@ class ItemsController extends Controller
             }
         }
         
+        $user = request()->user();
+        $canEdit = $user && ($user->hasRole('admin') || $user->hasRole('developer'));
+
         return view('items.show', [
             'item' => $item,
             'associatedCreature' => $associatedCreature,
+            'canEdit' => $canEdit,
         ]);
     }
 

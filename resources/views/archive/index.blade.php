@@ -5,12 +5,9 @@
 @section('content')
 <div class="page-header">
     <h1>Archive</h1>
-    <p class="lead">
-        Creatures and content from the EggCave archives. Images load from EggCave.com.
-        @if($tag)
-            <br><span style="font-size: 0.9375rem;">Showing creatures tagged: <strong>{{ $tag }}</strong></span>
-        @endif
-    </p>
+    @if($tag)
+    <p class="lead"><span style="font-size: 0.9375rem;">Showing creatures tagged: <strong>{{ $tag }}</strong></span></p>
+    @endif
 </div>
 
 <style>
@@ -76,7 +73,7 @@
     .archive-card a { text-decoration: none; color: inherit; display: block; }
     .archive-card .thumb {
         aspect-ratio: 1;
-        background: var(--bg);
+        background: var(--surface);
         display: flex;
         align-items: center;
         justify-content: center;
@@ -98,7 +95,7 @@
         color: var(--text);
         text-align: center;
     }
-    .archive-pagination { margin-top: 2rem; }
+    .archive-pagination { margin-top: 2rem; margin-bottom: 2rem; }
     .archive-pagination nav { display: flex; justify-content: center; flex-wrap: wrap; gap: 0.25rem; }
     .archive-pagination ul.pagination { list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 0.25rem; justify-content: center; }
     .archive-pagination ul.pagination li { display: inline-block; }
@@ -142,7 +139,6 @@
     <select name="sort" id="sort" onchange="this.form.submit()">
         <option value="title" {{ $sort === 'title' ? 'selected' : '' }}>Title</option>
         <option value="published_at" {{ $sort === 'published_at' ? 'selected' : '' }}>Date</option>
-        <option value="sort_order" {{ $sort === 'sort_order' ? 'selected' : '' }}>Order</option>
         <option value="created_at" {{ $sort === 'created_at' ? 'selected' : '' }}>Added</option>
     </select>
     <select name="dir" onchange="this.form.submit()">

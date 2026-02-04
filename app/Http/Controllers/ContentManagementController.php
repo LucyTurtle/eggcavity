@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\ArchiveItem;
+use App\Models\ArchiveStage;
 use App\Models\Item;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -12,13 +13,21 @@ class ContentManagementController extends Controller
 {
     public function index()
     {
-        $creatures = ArchiveItem::orderBy('title')->get(['id', 'title', 'slug', 'created_at']);
-        $items = Item::orderBy('name')->get(['id', 'name', 'slug', 'use', 'created_at']);
+        return redirect()->route('dashboard');
+    }
 
-        return view('content.index', [
-            'creatures' => $creatures,
-            'items' => $items,
-        ]);
+    public function indexCreatures()
+    {
+        $creatures = ArchiveItem::orderBy('title')->paginate(100, ['id', 'title', 'slug', 'created_at']);
+
+        return view('content.creatures.index', ['creatures' => $creatures]);
+    }
+
+    public function indexItems()
+    {
+        $items = Item::orderBy('name')->paginate(100, ['id', 'name', 'slug', 'use', 'created_at']);
+
+        return view('content.items.index', ['items' => $items]);
     }
 
     // --- Creatures ---
@@ -37,15 +46,29 @@ class ContentManagementController extends Controller
             'image_url' => ['nullable', 'string', 'max:2048'],
             'source_url' => ['nullable', 'string', 'max:2048'],
             'published_at' => ['nullable', 'date'],
-            'sort_order' => ['nullable', 'integer', 'min:0'],
+            'availability' => ['nullable', 'string', 'max:255'],
+            'dates' => ['nullable', 'string', 'max:255'],
+            'weight' => ['nullable', 'string', 'max:255'],
+            'length' => ['nullable', 'string', 'max:255'],
+            'obtained_from' => ['nullable', 'string', 'max:255'],
+            'gender_profile' => ['nullable', 'string', 'max:255'],
+            'habitat' => ['nullable', 'string', 'max:255'],
+            'about_eggs' => ['nullable', 'string'],
+            'about_creature' => ['nullable', 'string'],
+            'entry_written_by' => ['nullable', 'string', 'max:255'],
+            'design_concept_user' => ['nullable', 'string', 'max:255'],
+            'cdwc_entry_by' => ['nullable', 'string', 'max:255'],
+            'tags' => ['nullable', 'string', 'max:1000'],
         ]);
 
         $valid['slug'] = $valid['slug'] ?? Str::slug($valid['title']);
-        $valid['sort_order'] = $valid['sort_order'] ?? 0;
+        $valid['tags'] = isset($valid['tags']) && $valid['tags'] !== ''
+            ? array_map('trim', explode(',', $valid['tags']))
+            : null;
 
-        ArchiveItem::create($valid);
+        $creature = ArchiveItem::create($valid);
 
-        return redirect()->route('content.index')->with('success', 'Creature added.');
+        return redirect()->route('archive.show', $creature->slug)->with('success', 'Creature added.');
     }
 
     public function editCreature(ArchiveItem $archiveItem)
@@ -62,18 +85,72 @@ class ContentManagementController extends Controller
             'image_url' => ['nullable', 'string', 'max:2048'],
             'source_url' => ['nullable', 'string', 'max:2048'],
             'published_at' => ['nullable', 'date'],
-            'sort_order' => ['nullable', 'integer', 'min:0'],
+            'availability' => ['nullable', 'string', 'max:255'],
+            'dates' => ['nullable', 'string', 'max:255'],
+            'weight' => ['nullable', 'string', 'max:255'],
+            'length' => ['nullable', 'string', 'max:255'],
+            'obtained_from' => ['nullable', 'string', 'max:255'],
+            'gender_profile' => ['nullable', 'string', 'max:255'],
+            'habitat' => ['nullable', 'string', 'max:255'],
+            'about_eggs' => ['nullable', 'string'],
+            'about_creature' => ['nullable', 'string'],
+            'entry_written_by' => ['nullable', 'string', 'max:255'],
+            'design_concept_user' => ['nullable', 'string', 'max:255'],
+            'cdwc_entry_by' => ['nullable', 'string', 'max:255'],
+            'tags' => ['nullable', 'string', 'max:1000'],
         ]);
+
+        $valid['tags'] = isset($valid['tags']) && $valid['tags'] !== ''
+            ? array_map('trim', explode(',', $valid['tags']))
+            : null;
 
         $archiveItem->update($valid);
 
-        return redirect()->route('content.index')->with('success', 'Creature updated.');
+        // Sync stages: update existing, create new, delete removed
+        $stagesInput = $request->input('stages', []);
+        $keptIds = [];
+        $sortOrder = 0;
+        foreach ($stagesInput as $row) {
+            $stageNumber = isset($row['stage_number']) ? (int) $row['stage_number'] : 0;
+            $imageUrl = isset($row['image_url']) ? trim($row['image_url']) : '';
+            $requirement = isset($row['requirement']) ? trim($row['requirement']) : null;
+            // Skip empty rows (no image URL)
+            if ($imageUrl === '') {
+                continue;
+            }
+            $id = isset($row['id']) ? (int) $row['id'] : 0;
+            if ($id > 0) {
+                $stage = ArchiveStage::where('id', $id)->where('archive_item_id', $archiveItem->id)->first();
+                if ($stage) {
+                    $stage->update([
+                        'stage_number' => $stageNumber ?: 1,
+                        'image_url' => $imageUrl,
+                        'requirement' => $requirement ?: null,
+                        'sort_order' => $sortOrder++,
+                    ]);
+                    $keptIds[] = $stage->id;
+                }
+            } else {
+                $stage = ArchiveStage::create([
+                    'archive_item_id' => $archiveItem->id,
+                    'stage_number' => $stageNumber ?: ($sortOrder + 1),
+                    'image_url' => $imageUrl,
+                    'requirement' => $requirement ?: null,
+                    'sort_order' => $sortOrder++,
+                ]);
+                $keptIds[] = $stage->id;
+            }
+        }
+        // Delete stages that were removed from the form
+        ArchiveStage::where('archive_item_id', $archiveItem->id)->whereNotIn('id', $keptIds)->delete();
+
+        return redirect()->route('archive.show', $archiveItem->slug)->with('success', 'Creature updated.');
     }
 
     public function destroyCreature(ArchiveItem $archiveItem)
     {
         $archiveItem->delete();
-        return redirect()->route('content.index')->with('success', 'Creature removed.');
+        return redirect()->route('content.creature.index')->with('success', 'Creature removed.');
     }
 
     // --- Items ---
@@ -106,9 +183,9 @@ class ContentManagementController extends Controller
         $valid['is_retired'] = $request->boolean('is_retired');
         $valid['is_cavecash'] = $request->boolean('is_cavecash');
 
-        Item::create($valid);
+        $item = Item::create($valid);
 
-        return redirect()->route('content.index')->with('success', 'Item added.');
+        return redirect()->route('items.show', $item->slug)->with('success', 'Item added.');
     }
 
     public function editItem(Item $item)
@@ -139,12 +216,12 @@ class ContentManagementController extends Controller
 
         $item->update($valid);
 
-        return redirect()->route('content.index')->with('success', 'Item updated.');
+        return redirect()->route('items.show', $item->slug)->with('success', 'Item updated.');
     }
 
     public function destroyItem(Item $item)
     {
         $item->delete();
-        return redirect()->route('content.index')->with('success', 'Item removed.');
+        return redirect()->route('content.item.index')->with('success', 'Item removed.');
     }
 }
