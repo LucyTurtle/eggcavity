@@ -6,10 +6,13 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ImpersonationController;
+use App\Http\Controllers\RunJobController;
 use App\Http\Controllers\ItemsController;
 use App\Http\Controllers\ContentManagementController;
+use App\Http\Controllers\PendingAiTravelSuggestionsController;
 use App\Http\Controllers\TravelSuggestionController;
 use App\Http\Controllers\TravelViewerController;
+use App\Http\Controllers\UserManagementController;
 use App\Http\Controllers\WishlistController;
 use Illuminate\Support\Facades\Route;
 
@@ -42,6 +45,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/account/password', [AccountController::class, 'updatePassword'])->name('account.password.update');
     // Dashboard for admin/developer (optional; users can still be logged in without access)
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard')->middleware('role:admin,developer');
+    Route::post('/dashboard/run-job', [RunJobController::class, 'run'])->name('dashboard.run-job')->middleware('role:admin,developer');
     // Manage content (admin/developer)
     Route::middleware('role:admin,developer')->prefix('dashboard/content')->name('content.')->group(function () {
         Route::get('/', [ContentManagementController::class, 'index'])->name('index');
@@ -64,6 +68,20 @@ Route::middleware('auth')->group(function () {
         Route::put('travel-suggestions/{travelSuggestion}', [TravelSuggestionController::class, 'update'])->name('travel-suggestions.update');
         Route::delete('travel-suggestions/{travelSuggestion}', [TravelSuggestionController::class, 'destroy'])->name('travel-suggestions.destroy');
         Route::post('archive/{slug}/apply-recommended-travels', [ArchiveController::class, 'applyRecommendedToAllStages'])->name('archive.apply-recommended-travels');
+        Route::get('pending-ai-travel-suggestions', [PendingAiTravelSuggestionsController::class, 'index'])->name('pending-ai-travel-suggestions.index');
+        Route::post('pending-ai-travel-suggestions/{pendingAiTravelSuggestion}/approve', [PendingAiTravelSuggestionsController::class, 'approve'])->name('pending-ai-travel-suggestions.approve');
+        Route::post('pending-ai-travel-suggestions/{pendingAiTravelSuggestion}/reject', [PendingAiTravelSuggestionsController::class, 'reject'])->name('pending-ai-travel-suggestions.reject');
+    });
+    // User manager (developer only)
+    Route::middleware('role:developer')->prefix('dashboard/users')->name('users.')->group(function () {
+        Route::get('/', [UserManagementController::class, 'index'])->name('index');
+        Route::get('create', [UserManagementController::class, 'create'])->name('create');
+        Route::post('/', [UserManagementController::class, 'store'])->name('store');
+        Route::get('{user}/edit', [UserManagementController::class, 'edit'])->name('edit');
+        Route::put('{user}', [UserManagementController::class, 'update'])->name('update');
+        Route::post('{user}/ban', [UserManagementController::class, 'ban'])->name('ban');
+        Route::post('{user}/unban', [UserManagementController::class, 'unban'])->name('unban');
+        Route::post('{user}/reset-password', [UserManagementController::class, 'resetPassword'])->name('reset-password');
     });
     // Impersonation (developer only)
     Route::post('/impersonate/{user}/start', [ImpersonationController::class, 'start'])->name('impersonate.start')->middleware('role:developer');

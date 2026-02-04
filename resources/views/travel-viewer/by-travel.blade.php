@@ -22,6 +22,8 @@
     .tv-result-card .stage-image-wrapper .trinket-background { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 1; }
     .tv-result-card .stage-image-wrapper img:not(.trinket-background) { position: relative; width: 100%; height: 100%; object-fit: contain; z-index: 2; }
     .tv-result-card .creature-name { font-size: 0.75rem; color: var(--text-secondary); margin: 0.35rem 0 0 0; line-height: 1.2; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+    .tv-result-card { cursor: pointer; }
+    .tv-result-card:hover { border-color: var(--accent); }
     .searchable-wrap { position: relative; max-width: 18rem; }
     .searchable-wrap input[type=text] { width: 100%; padding: 0.4rem 0.6rem; font-size: 0.9375rem; border: 1px solid var(--border); border-radius: var(--radius-sm); box-sizing: border-box; }
     .searchable-dropdown { position: absolute; top: 100%; left: 0; right: 0; max-height: 10rem; overflow-y: auto; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); box-shadow: var(--shadow); z-index: 10; display: none; margin-top: 2px; }
@@ -29,38 +31,67 @@
     .searchable-dropdown [data-slug] { display: block; padding: 0.4rem 0.75rem; cursor: pointer; font-size: 0.9375rem; }
     .searchable-dropdown [data-slug]:hover { background: var(--accent-muted); }
     .tv-empty { color: var(--text-secondary); }
+    .saved-combos { margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--border); }
+    .saved-combos h3 { font-size: 1.1rem; margin-bottom: 0.5rem; }
+    .saved-combos-grid { display: flex; flex-wrap: wrap; gap: 0.75rem; }
+    .saved-combo-card { position: relative; width: 120px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0.5rem; box-shadow: var(--shadow); }
+    .saved-combo-card .btn-remove { position: absolute; top: 0.25rem; right: 0.25rem; width: 1.25rem; height: 1.25rem; padding: 0; font-size: 1rem; line-height: 1; border: none; background: var(--surface-elevated); color: var(--text-secondary); cursor: pointer; border-radius: 50%; z-index: 3; }
+    .saved-combo-card .btn-remove:hover { background: var(--danger-muted); color: var(--danger); }
+    .saved-combo-card .thumb { position: relative; width: 90px; height: 90px; margin: 0 auto; }
+    .saved-combo-card .thumb .bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 1; }
+    .saved-combo-card .thumb .fg { position: relative; width: 100%; height: 100%; object-fit: contain; z-index: 2; }
+    .saved-combo-card .label { font-size: 0.7rem; margin: 0.35rem 0 0 0; line-height: 1.2; }
 </style>
 
 <div class="tv-controls">
     <div class="field-wrap">
-        <label>Travel:</label>
+        <label>Travels:</label>
         <div class="searchable-wrap" id="travel-wrap">
             <input type="text" id="travel-input" autocomplete="off" placeholder="Type to search...">
-            <input type="hidden" id="travel-slug" value="">
             <div class="searchable-dropdown" id="travel-dropdown"></div>
         </div>
     </div>
+    <div class="field-wrap">
+        <label>Trinket travels:</label>
+        <div class="searchable-wrap" id="trinket-travel-wrap">
+            <input type="text" id="trinket-travel-input" autocomplete="off" placeholder="Type to search...">
+            <div class="searchable-dropdown" id="trinket-travel-dropdown"></div>
+        </div>
+    </div>
+    <input type="hidden" id="travel-slug" value="">
     <div class="stage-tabs" id="stage-tabs" role="tablist"></div>
 </div>
 
+<p class="text-secondary small mt-2">Click any creature+travel card below to save that combination. Saved list is stored in your browser and shared with the other travel viewer pages.</p>
+
 <div id="grid-container" class="tv-grid" style="display: none;"></div>
 <p class="tv-empty" id="no-selection-msg">Choose a travel above to see every creature with it.</p>
+
+<section class="saved-combos" id="saved-combos">
+    <h3>Saved combinations</h3>
+    <p id="saved-none" class="tv-empty">No saved combinations yet. Click any creature+travel card above to save it.</p>
+    <div id="saved-combos-grid" class="saved-combos-grid" style="display: none;"></div>
+</section>
 
 <script>
 (function() {
     var creatures = @json($creaturesForJs);
     var travels = @json($travelsForJs);
+    var trinketTravels = @json($trinketTravelsForJs);
+    var allTravels = @json($allTravelsForJs);
 
     var travelInput = document.getElementById('travel-input');
+    var trinketTravelInput = document.getElementById('trinket-travel-input');
     var travelSlugEl = document.getElementById('travel-slug');
     var travelDropdown = document.getElementById('travel-dropdown');
+    var trinketTravelDropdown = document.getElementById('trinket-travel-dropdown');
     var stageTabs = document.getElementById('stage-tabs');
     var gridContainer = document.getElementById('grid-container');
     var noSelectionMsg = document.getElementById('no-selection-msg');
 
     var currentStageNumber = 1;
 
-    function getTravel(slug) { return travels.find(function(t) { return t.slug === slug; }); }
+    function getTravel(slug) { return allTravels.find(function(t) { return t.slug === slug; }); }
 
     function getStageNumbers() {
         var set = {};
@@ -155,25 +186,86 @@
             var stage = (creature.stages || []).find(function(s) { return s.stage_number === currentStageNumber; });
             if (!stage) return;
             var stageImg = stage.image_url ? '<img src="' + escapeHtml(stage.image_url) + '" alt="" loading="lazy" referrerpolicy="no-referrer">' : '';
-            html += '<div class="tv-result-card"><div class="stage-image-wrapper">' + travelBg + stageImg + '</div><p class="creature-name">' + escapeHtml(creature.title) + '</p></div>';
+            html += '<div class="tv-result-card" data-creature-slug="' + escapeHtml(creature.slug) + '" data-creature-title="' + escapeHtml(creature.title) + '" data-stage="' + currentStageNumber + '" data-travel-slug="' + escapeHtml(travel.slug) + '" data-travel-name="' + escapeHtml(travel.name) + '" title="Click to save this combination"><div class="stage-image-wrapper">' + travelBg + stageImg + '</div><p class="creature-name">' + escapeHtml(creature.title) + '</p></div>';
         });
         gridContainer.innerHTML = html || '<p class="tv-empty">No creatures have stage ' + currentStageNumber + '.</p>';
+        gridContainer.querySelectorAll('.tv-result-card').forEach(function(card) {
+            card.addEventListener('click', function() { saveComboFromCard(card); });
+        });
     }
 
-    buildSearchable('name', 'slug', travels, travelInput, travelSlugEl, travelDropdown, function() {
+    function getCreature(slug) { return creatures.find(function(c) { return c.slug === slug; }); }
+
+    function setTravelFromTravels() {
+        trinketTravelInput.value = '';
         renderGrid();
-    });
+    }
+    function setTravelFromTrinket() {
+        travelInput.value = '';
+        renderGrid();
+    }
+
+    buildSearchable('name', 'slug', travels, travelInput, travelSlugEl, travelDropdown, setTravelFromTravels);
+    buildSearchable('name', 'slug', trinketTravels, trinketTravelInput, travelSlugEl, trinketTravelDropdown, setTravelFromTrinket);
 
     var stageNumbers = getStageNumbers();
     if (stageNumbers.length) currentStageNumber = stageNumbers[0];
     renderStageTabs();
 
-    var firstTravel = travels[0];
+    var SAVED_KEY = 'travel_viewer_saved';
+    var savedNone = document.getElementById('saved-none');
+    var savedGrid = document.getElementById('saved-combos-grid');
+
+    function getSaved() { try { var raw = localStorage.getItem(SAVED_KEY); return raw ? JSON.parse(raw) : []; } catch (e) { return []; } }
+    function setSaved(list) { try { localStorage.setItem(SAVED_KEY, JSON.stringify(list)); } catch (e) {} }
+    function saveComboFromCard(card) {
+        var list = getSaved();
+        list.push({
+            c: card.getAttribute('data-creature-slug'),
+            ct: card.getAttribute('data-creature-title'),
+            t: card.getAttribute('data-travel-slug'),
+            tn: card.getAttribute('data-travel-name'),
+            s: parseInt(card.getAttribute('data-stage'), 10)
+        });
+        setSaved(list);
+        renderSaved();
+    }
+    function removeSaved(index) {
+        var list = getSaved();
+        list.splice(index, 1);
+        setSaved(list);
+        renderSaved();
+    }
+    function renderSaved() {
+        var list = getSaved();
+        savedNone.style.display = list.length ? 'none' : 'block';
+        savedGrid.style.display = list.length ? 'flex' : 'none';
+        savedGrid.innerHTML = '';
+        list.forEach(function(item, i) {
+            var creature = getCreature(item.c);
+            var travel = getTravel(item.t);
+            var stage = (creature && creature.stages) ? creature.stages.find(function(s) { return s.stage_number === item.s; }) : null;
+            if (!stage && creature && creature.stages && creature.stages[0]) stage = creature.stages[0];
+            var stageImg = stage && stage.image_url ? escapeHtml(stage.image_url) : '';
+            var travelBg = travel && travel.image_url ? escapeHtml(travel.image_url) : '';
+            var card = document.createElement('div');
+            card.className = 'saved-combo-card';
+            card.innerHTML = '<button type="button" class="btn-remove" aria-label="Remove">×</button><div class="thumb">' +
+                (travelBg ? '<img class="bg" src="' + travelBg + '" alt="" referrerpolicy="no-referrer">' : '') +
+                (stageImg ? '<img class="fg" src="' + stageImg + '" alt="" referrerpolicy="no-referrer">' : '') +
+                '</div><p class="label">' + escapeHtml(item.ct) + ' + ' + escapeHtml(item.tn) + (item.s != null ? ' (Stage ' + item.s + ')' : '') + '</p>';
+            card.querySelector('.btn-remove').addEventListener('click', function() { removeSaved(i); });
+            savedGrid.appendChild(card);
+        });
+    }
+
+    var firstTravel = travels[0] || trinketTravels[0];
     if (firstTravel) {
         travelSlugEl.value = firstTravel.slug;
-        travelInput.value = firstTravel.name;
+        if (travels.some(function(t) { return t.slug === firstTravel.slug; })) travelInput.value = firstTravel.name; else trinketTravelInput.value = firstTravel.name;
     }
     renderGrid();
+    renderSaved();
 })();
 </script>
 @endsection

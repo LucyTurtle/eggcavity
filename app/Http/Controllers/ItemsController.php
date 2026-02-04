@@ -45,6 +45,14 @@ class ItemsController extends Controller
             }
         }
 
+        if ($request->filled('retired')) {
+            $query->where('is_retired', true);
+        }
+
+        if ($request->filled('cavecash')) {
+            $query->where('is_cavecash', true);
+        }
+
         // Sort
         $sort = $request->get('sort', 'name');
         $dir = $request->get('dir', 'asc');
@@ -72,6 +80,8 @@ class ItemsController extends Controller
             'search' => $request->get('q'),
             'shop' => $request->get('shop'),
             'use_type' => $request->get('use_type'),
+            'filter_retired' => $request->filled('retired'),
+            'filter_cavecash' => $request->filled('cavecash'),
             'sort' => $sort,
             'dir' => $dir,
             'shops' => $shops,

@@ -11,7 +11,16 @@ class TravelViewerController extends Controller
     private function travelViewerData(): array
     {
         $creatures = ArchiveItem::with('stages')->orderBy('title')->get();
-        $travels = Item::whereRaw('LOWER(use) = ?', ['travel'])->orderBy('name')->get(['id', 'name', 'slug', 'image_url']);
+        $allTravels = Item::whereRaw('LOWER(use) = ?', ['travel'])->get(['id', 'name', 'slug', 'image_url']);
+
+        $travels = $allTravels->filter(fn ($t) => ! $this->isTrinketTravel($t->name));
+        $travels = $travels->sortBy('name', SORT_NATURAL)->values();
+
+        $trinketTravels = $allTravels->filter(fn ($t) => $this->isTrinketTravel($t->name));
+        $trinketTravels = $trinketTravels->sort(function ($a, $b) {
+            [$keyA, $keyB] = [$this->trinketTravelSortKey($a->name), $this->trinketTravelSortKey($b->name)];
+            return strcasecmp($keyA, $keyB);
+        })->values();
 
         $creaturesForJs = $creatures->map(fn ($c) => [
             'slug' => $c->slug,
@@ -29,12 +38,38 @@ class TravelViewerController extends Controller
             'image_url' => $t->image_url,
         ])->values()->all();
 
+        $trinketTravelsForJs = $trinketTravels->map(fn ($t) => [
+            'slug' => $t->slug,
+            'name' => $t->name,
+            'image_url' => $t->image_url,
+        ])->values()->all();
+
+        $allTravelsForJs = array_merge($travelsForJs, $trinketTravelsForJs);
+
         return [
             'creatures' => $creatures,
             'travels' => $travels,
+            'trinketTravels' => $trinketTravels,
             'creaturesForJs' => $creaturesForJs,
             'travelsForJs' => $travelsForJs,
+            'trinketTravelsForJs' => $trinketTravelsForJs,
+            'allTravelsForJs' => $allTravelsForJs,
         ];
+    }
+
+    private function isTrinketTravel(string $name): bool
+    {
+        return (bool) preg_match('/\s+Stage\s+\d+/i', $name);
+    }
+
+    private function trinketTravelSortKey(string $name): string
+    {
+        if (preg_match('/^(.+?)\s+Stage\s+(\d+)\s*$/i', $name, $m)) {
+            $creaturePart = trim($m[1]);
+            $stageNum = (int) $m[2];
+            return $creaturePart . ' Stage ' . str_pad((string) $stageNum, 4, '0', STR_PAD_LEFT);
+        }
+        return $name;
     }
 
     /**
@@ -45,8 +80,9 @@ class TravelViewerController extends Controller
         $data = $this->travelViewerData();
         $creatures = $data['creatures'];
         $travels = $data['travels'];
+        $trinketTravels = $data['trinketTravels'];
         $firstCreature = $creatures->first();
-        $firstTravel = $travels->first();
+        $firstTravel = $travels->first() ?? $trinketTravels->first();
 
         return view('travel-viewer.index', array_merge($data, [
             'initialCreature' => $request->get('creature') ?: ($firstCreature ? $firstCreature->slug : null),

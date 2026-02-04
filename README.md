@@ -126,10 +126,21 @@ DB_PASSWORD=your_password
 
 Then run `php artisan migrate`.
 
+## Scheduled tasks
+
+Ensure the scheduler runs every minute (cron: `* * * * * cd /path/to/app && php artisan schedule:run`). Then:
+
+- **00:30 daily** — `archive:scrape` and `items:scrape` (creature and item data).
+
+## AI travel suggestions (optional)
+
+Suggest travels per creature using **free local image color analysis** (no API key). Run **Dashboard → Run jobs manually → Suggest travels (image match)**. Approve or reject from **Dashboard → Manage content → Pending travel suggestions**.
+
 ## Artisan commands
 
 - `php artisan items:scrape` — Scrape items from EggCave (run when needed to refresh catalog)
 - `php artisan archive:scrape` — Scrape archive creature/stage data
+- `php artisan travels:suggest-by-image` — Suggest travels by comparing creature and travel images (free; requires `image_url` on creatures and travels; use `--limit`, `--travel-limit`, `--min-score`)
 
 ## Tech stack
 

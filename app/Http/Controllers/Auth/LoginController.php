@@ -3,8 +3,10 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 
 class LoginController extends Controller
@@ -16,22 +18,31 @@ class LoginController extends Controller
 
     public function login(Request $request)
     {
-        $credentials = $request->validate([
-            'email' => ['required', 'string', 'email'],
+        $validated = $request->validate([
+            'login' => ['required', 'string'],
             'password' => ['required', 'string'],
         ]);
 
-        $remember = $request->boolean('remember');
+        $user = User::where('email', $validated['login'])
+            ->orWhere('name', $validated['login'])
+            ->first();
 
-        if (! Auth::attempt($credentials, $remember)) {
+        if (! $user || ! Hash::check($validated['password'], $user->password)) {
             throw ValidationException::withMessages([
-                'email' => __('auth.failed'),
+                'login' => __('auth.failed'),
             ]);
         }
 
+        if ($user->isBanned()) {
+            throw ValidationException::withMessages([
+                'login' => 'This account has been banned.',
+            ]);
+        }
+
+        Auth::login($user, $request->boolean('remember'));
+
         $request->session()->regenerate();
 
-        // Always send to homepage so we never redirect back to /login.
         return redirect()->route('home');
     }
 

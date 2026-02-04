@@ -266,7 +266,7 @@
                 <div class="stage-card">
                     <div class="stage-image-wrapper">
                         @php
-                            $bgTravel = $stage->travelSuggestions->first()?->item ?? $trinketTravels[$stage->id] ?? null;
+                            $bgTravel = $trinketTravels[$stage->id] ?? null;
                         @endphp
                         @if($bgTravel && $bgTravel->image_url)
                             <img src="{{ $bgTravel->image_url }}" alt="{{ $bgTravel->name }}" class="trinket-background" loading="lazy" referrerpolicy="no-referrer">
@@ -334,7 +334,7 @@
         </div>
     @endif
 
-    @if($item->entry_written_by || $item->design_concept_user || $item->cdwc_entry_by || $canApplyRecommendations)
+    @if($item->entry_written_by || $item->design_concept_user || $item->cdwc_entry_by)
         @php
             $entryUsers = array_filter(array_map('trim', explode(',', $item->entry_written_by ?? '')));
             $conceptUsers = array_filter(array_map('trim', explode(',', $item->design_concept_user ?? '')));
@@ -378,11 +378,20 @@
             </div>
             @endif
         </div>
+    @elseif($canApplyRecommendations)
+        <div class="card edit-mode" style="margin-top: 1rem; display: none;">
+            <h3 style="margin: 0 0 0.5rem 0; font-size: 1rem;">Credits</h3>
+            <p style="font-size: 0.875rem; color: var(--text-secondary); margin: 0 0 0.5rem 0;">Optional: entry written by, design concept, CDWC winning entry.</p>
+            <div class="form-group"><label>Entry written by</label><input type="text" name="entry_written_by" value="{{ old('entry_written_by', $item->entry_written_by) }}" placeholder="Username"></div>
+            <div class="form-group"><label>Design concept user</label><input type="text" name="design_concept_user" value="{{ old('design_concept_user', $item->design_concept_user) }}" placeholder="Username"></div>
+            <div class="form-group"><label>CDWC winning entry by</label><input type="text" name="cdwc_entry_by" value="{{ old('cdwc_entry_by', $item->cdwc_entry_by) }}" placeholder="Username"></div>
+        </div>
     @endif
 
     @if(!empty($recommendedTravels))
+        <div id="travel-suggestions-area">
         <h3 style="font-size: 0.9375rem; margin: 1rem 0 0.25rem 0;">Recommended Travels</h3>
-        <p style="font-size: 0.875rem; color: var(--text-secondary); margin: 0 0 0.75rem 0;">Use Apply to set this travel as the background on every stage.</p>
+        <p style="font-size: 0.875rem; color: var(--text-secondary); margin: 0 0 0.75rem 0;">Apply to preview a travel on the stages (preview only; reload restores trinket or blank).</p>
         @if(!empty($canApplyRecommendations))
             <div class="recommended-travels-grid" style="margin-bottom: 1rem;" id="recommended-travels-grid">
                 @foreach($recommendedTravels as $travel)
@@ -404,7 +413,7 @@
             </div>
             <script>
             (function() {
-                document.getElementById('recommended-travels-grid').addEventListener('click', function(e) {
+                document.getElementById('travel-suggestions-area').addEventListener('click', function(e) {
                     var btn = e.target.closest('.apply-travel-btn');
                     if (!btn || btn.disabled) return;
                     var card = btn.closest('.travel-card');
@@ -412,50 +421,29 @@
                     var imageUrl = thumbImg ? thumbImg.src : '';
                     var imageAlt = thumbImg ? (thumbImg.alt || (card.querySelector('.label') && card.querySelector('.label').textContent) || '') : '';
                     if (!imageUrl) return;
-                    var action = btn.getAttribute('data-action');
-                    var travelId = btn.getAttribute('data-travel-id');
-                    var csrf = btn.getAttribute('data-csrf');
-                    var formData = new FormData();
-                    formData.append('_token', csrf);
-                    formData.append('travel_ids[]', travelId);
-                    btn.disabled = true;
                     var stagesGrid = document.querySelector('.stages-grid');
                     if (stagesGrid) {
                         var rect = stagesGrid.getBoundingClientRect();
                         var inView = rect.bottom > 0 && rect.top < window.innerHeight;
                         if (!inView) stagesGrid.scrollIntoView({ behavior: 'smooth', block: 'start' });
                     }
-                    fetch(action, {
-                        method: 'POST',
-                        body: formData,
-                        headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
-                    }).then(function(r) {
-                        if (r.ok) return r.json();
-                        throw new Error('Request failed');
-                    }).then(function() {
-                        var wrappers = document.querySelectorAll('.stage-image-wrapper');
-                        wrappers.forEach(function(wrapper) {
-                            var bg = wrapper.querySelector('.trinket-background');
-                            if (bg) {
-                                bg.src = imageUrl;
-                                bg.alt = imageAlt;
-                                bg.style.display = '';
-                            } else {
-                                var stageImg = wrapper.querySelector('img:not(.trinket-background)');
-                                bg = document.createElement('img');
-                                bg.src = imageUrl;
-                                bg.alt = imageAlt;
-                                bg.className = 'trinket-background';
-                                bg.loading = 'lazy';
-                                bg.referrerPolicy = 'no-referrer';
-                                wrapper.insertBefore(bg, stageImg);
-                            }
-                        });
-                        btn.disabled = false;
-                        btn.textContent = 'Apply';
-                    }).catch(function() {
-                        btn.disabled = false;
-                        btn.textContent = 'Apply';
+                    var wrappers = document.querySelectorAll('.stage-image-wrapper');
+                    wrappers.forEach(function(wrapper) {
+                        var bg = wrapper.querySelector('.trinket-background');
+                        if (bg) {
+                            bg.src = imageUrl;
+                            bg.alt = imageAlt;
+                            bg.style.display = '';
+                        } else {
+                            var stageImg = wrapper.querySelector('img:not(.trinket-background)');
+                            bg = document.createElement('img');
+                            bg.src = imageUrl;
+                            bg.alt = imageAlt;
+                            bg.className = 'trinket-background';
+                            bg.loading = 'lazy';
+                            bg.referrerPolicy = 'no-referrer';
+                            wrapper.insertBefore(bg, stageImg);
+                        }
                     });
                 });
             })();
@@ -479,6 +467,7 @@
                 @endforeach
             </div>
         @endif
+        </div>
     @endif
 
     @if(($item->tags && count($item->tags) > 0) || $canApplyRecommendations)
