@@ -31,7 +31,13 @@ class LoginController extends Controller
 
         $request->session()->regenerate();
 
-        return redirect()->intended(route('home'));
+        $intended = $request->session()->pull('url.intended');
+        $path = $intended ? parse_url($intended, PHP_URL_PATH) : null;
+        if ($path && ! in_array($path, ['/login', '/register'], true)) {
+            return redirect()->to($path);
+        }
+
+        return redirect()->route('home');
     }
 
     public function logout(Request $request)

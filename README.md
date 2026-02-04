@@ -49,6 +49,24 @@ A Laravel community site for [EggCave.com](https://eggcave.com) — the adoptabl
 
    Open [http://localhost:8000](http://localhost:8000).
 
+## HTTPS (production)
+
+For the site to work over HTTPS:
+
+1. **Server `.env`** (on the machine serving the app):
+
+   - `APP_URL=https://your-domain.com` (or `https://YOUR_SERVER_IP` if you have no domain). Must use `https://`.
+   - `SESSION_SECURE_COOKIE=true` so session cookies are sent only over HTTPS.
+
+2. **SSL on the server** — Your web server (e.g. nginx, Apache, Caddy) must:
+
+   - Listen on port 443 and have a valid SSL certificate (e.g. [Let’s Encrypt](https://letsencrypt.org/) with certbot).
+   - Forward the protocol to the app. For nginx with `proxy_pass` to PHP/Laravel, include:
+     - `proxy_set_header X-Forwarded-Proto $scheme;`
+     - (and typically `X-Forwarded-For` / `Host` as well.)
+
+   The app trusts proxy headers and forces HTTPS when `APP_URL` starts with `https://`.
+
 ## Optional: MySQL
 
 Set in `.env`:
