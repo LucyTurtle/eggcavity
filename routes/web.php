@@ -89,8 +89,8 @@ Route::middleware('auth')->group(function () {
     Route::delete('/wishlist/travels/{travelWishlist}', [WishlistController::class, 'removeTravel'])->name('wishlist.travel.remove');
 });
 
-// Public shared wishlists (by user id; /wishlists/add/* is matched first)
-Route::get('/wishlists/{user:id}/creatures', [WishlistController::class, 'showSharedCreatures'])->name('wishlists.shared.creatures');
-Route::get('/wishlists/{user:id}/items', [WishlistController::class, 'showSharedItems'])->name('wishlists.shared.items');
-Route::get('/wishlists/{user:id}/travels', [WishlistController::class, 'showSharedTravels'])->name('wishlists.shared.travels');
-Route::get('/wishlists/{user:id}', [WishlistController::class, 'showShared'])->name('wishlists.shared');
+// Public shared wishlists (by name slug + id, e.g. /wishlists/test-2; /wishlists/add/* is matched first)
+Route::get('/wishlists/{slug}/creatures', [WishlistController::class, 'showSharedCreatures'])->name('wishlists.shared.creatures');
+Route::get('/wishlists/{slug}/items', [WishlistController::class, 'showSharedItems'])->name('wishlists.shared.items');
+Route::get('/wishlists/{slug}/travels', [WishlistController::class, 'showSharedTravels'])->name('wishlists.shared.travels');
+Route::get('/wishlists/{slug}', [WishlistController::class, 'showShared'])->name('wishlists.shared');

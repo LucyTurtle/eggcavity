@@ -10,6 +10,7 @@ use App\Models\TravelWishlist;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
 class WishlistController extends Controller
@@ -33,9 +34,26 @@ class WishlistController extends Controller
         ]);
     }
 
-    public function showShared(User $user)
+    /** Find user by wishlist slug (slug of name). Name is unique so at most one match. */
+    private function findOwnerBySlug(string $slug): User
     {
-        $owner = $user;
+        if (in_array($slug, ['add', 'share'], true)) {
+            abort(404);
+        }
+        $owner = User::query()
+            ->get()
+            ->first(fn (User $u): bool => Str::slug($u->name) === $slug);
+
+        if (! $owner) {
+            abort(404);
+        }
+
+        return $owner;
+    }
+
+    public function showShared(string $slug)
+    {
+        $owner = $this->findOwnerBySlug($slug);
         $creatureWishlists = $owner->creatureWishlists()->with('archiveItem')->orderBy('created_at', 'desc')->get();
         $itemWishlists = $owner->itemWishlists()->with('item')->orderBy('created_at', 'desc')->get();
         $travelWishlists = $owner->travelWishlists()->with('item')->orderBy('created_at', 'desc')->get();
@@ -48,9 +66,9 @@ class WishlistController extends Controller
         ]);
     }
 
-    public function showSharedCreatures(User $user)
+    public function showSharedCreatures(string $slug)
     {
-        $owner = $user;
+        $owner = $this->findOwnerBySlug($slug);
         $creatureWishlists = $owner->creatureWishlists()->with('archiveItem')->orderBy('created_at', 'desc')->get();
 
         return view('wishlists.shared-creatures', [
@@ -59,9 +77,9 @@ class WishlistController extends Controller
         ]);
     }
 
-    public function showSharedItems(User $user)
+    public function showSharedItems(string $slug)
     {
-        $owner = $user;
+        $owner = $this->findOwnerBySlug($slug);
         $itemWishlists = $owner->itemWishlists()->with('item')->orderBy('created_at', 'desc')->get();
 
         return view('wishlists.shared-items', [
@@ -70,9 +88,9 @@ class WishlistController extends Controller
         ]);
     }
 
-    public function showSharedTravels(User $user)
+    public function showSharedTravels(string $slug)
     {
-        $owner = $user;
+        $owner = $this->findOwnerBySlug($slug);
         $travelWishlists = $owner->travelWishlists()->with('item')->orderBy('created_at', 'desc')->get();
 
         return view('wishlists.shared-travels', [
