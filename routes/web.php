@@ -89,6 +89,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/', [UserManagementController::class, 'store'])->name('store');
         Route::get('{user}/edit', [UserManagementController::class, 'edit'])->name('edit');
         Route::put('{user}', [UserManagementController::class, 'update'])->name('update');
+        Route::post('{user}/role', [UserManagementController::class, 'updateRole'])->name('update-role');
         Route::post('{user}/ban', [UserManagementController::class, 'ban'])->name('ban');
         Route::post('{user}/unban', [UserManagementController::class, 'unban'])->name('unban');
         Route::post('{user}/reset-password', [UserManagementController::class, 'resetPassword'])->name('reset-password');
@@ -99,6 +100,9 @@ Route::middleware('auth')->group(function () {
 
     // Wishlists
     Route::get('/wishlists', [WishlistController::class, 'index'])->name('wishlists.index');
+    Route::get('/wishlists/creatures', [WishlistController::class, 'showCreatures'])->name('wishlists.creatures');
+    Route::get('/wishlists/items', [WishlistController::class, 'showItems'])->name('wishlists.items');
+    Route::get('/wishlists/travels', [WishlistController::class, 'showTravels'])->name('wishlists.travels');
     Route::redirect('/wishlists/add', '/wishlists', 301);
     Route::get('/wishlists/add/creatures', [WishlistController::class, 'showAddCreatures'])->name('wishlists.add.creatures');
     Route::get('/wishlists/add/items', [WishlistController::class, 'showAddItems'])->name('wishlists.add.items');

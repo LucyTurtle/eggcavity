@@ -55,7 +55,7 @@
 @else
     <table class="content-table">
         <thead>
-            <tr>
+                <tr>
                 <th>Name</th>
                 <th>Email</th>
                 <th>Role</th>
@@ -68,7 +68,20 @@
                 <tr>
                     <td><a href="{{ route('users.edit', $u) }}">{{ $u->name }}</a></td>
                     <td>{{ $u->email }}</td>
-                    <td><code style="font-size: 0.8125rem;">{{ $u->role }}</code></td>
+                    <td>
+                        @if(auth()->user()->isDeveloper())
+                            <form method="post" action="{{ route('users.update-role', $u) }}" class="role-form" style="display: inline;">
+                                @csrf
+                                <select name="role" class="role-select" style="padding: 0.2rem 0.4rem; font-size: 0.8125rem; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface);" onchange="this.form.submit()">
+                                    <option value="user" {{ $u->role === 'user' ? 'selected' : '' }}>user</option>
+                                    <option value="admin" {{ $u->role === 'admin' ? 'selected' : '' }}>admin</option>
+                                    <option value="developer" {{ $u->role === 'developer' ? 'selected' : '' }}>developer</option>
+                                </select>
+                            </form>
+                        @else
+                            <code style="font-size: 0.8125rem;">{{ $u->role }}</code>
+                        @endif
+                    </td>
                     <td>
                         @if($u->isBanned())
                             <span class="badge badge-banned">Banned</span>

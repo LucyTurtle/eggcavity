@@ -16,6 +16,7 @@ import argparse
 import os
 import re
 import sys
+import time
 import urllib.parse
 from typing import Optional
 
@@ -28,6 +29,8 @@ except ImportError:
 # Set this to your eggcavity (fan site) base URL — not eggcave.com
 EGGCAVITY_SITE_URL = os.environ.get("EGGCAVITY_URL", "https://eggcavity.com")
 EGGCAVE_BASE = "https://eggcave.com"
+# Delay between Eggcave requests (seconds) to be polite
+EGGCAVE_DELAY = 0.4
 DEFAULT_HEADERS = {
     "User-Agent": "eggcave-wishlist-sync/1.0",
     "Accept": "text/html,application/xhtml+xml,application/json",
@@ -35,8 +38,15 @@ DEFAULT_HEADERS = {
 }
 
 
+def _normalize_title(s: str) -> str:
+    """Normalize for comparison: lowercase, strip, collapse whitespace."""
+    if not s:
+        return ""
+    return " ".join(s.lower().strip().split())
+
+
 def fetch_eggcave_creature_slugs(username: str) -> set[str]:
-    """Scrape Eggcave profile page for /archives/... links = creatures the user has."""
+    """Scrape Eggcave profile page for /archives/... links (candidate creatures on profile)."""
     url = f"{EGGCAVE_BASE}/@{username}"
     slugs = set()
     try:
@@ -53,6 +63,7 @@ def fetch_eggcave_creature_slugs(username: str) -> set[str]:
 
     next_url = _find_next_profile_page(r.text, url)
     while next_url:
+        time.sleep(EGGCAVE_DELAY)
         try:
             r = requests.get(next_url, headers=DEFAULT_HEADERS, timeout=30)
             r.raise_for_status()
@@ -65,6 +76,52 @@ def fetch_eggcave_creature_slugs(username: str) -> set[str]:
         next_url = _find_next_profile_page(r.text, next_url)
 
     return slugs
+
+
+def fetch_species_name_from_creature_page(slug: str) -> Optional[str]:
+    """
+    Fetch Eggcave creature detail page and return the species/title (from h1).
+    Matches Laravel scraper: 'The Archives: Aal' -> 'Aal'; else use full h1 text.
+    """
+    url = f"{EGGCAVE_BASE}/archives/{slug}"
+    try:
+        time.sleep(EGGCAVE_DELAY)
+        r = requests.get(url, headers=DEFAULT_HEADERS, timeout=30)
+        r.raise_for_status()
+    except requests.RequestException:
+        return None
+
+    # <h1>...</h1> - often "The Archives: Species Name" or just "Species Name"
+    m = re.search(r"<h1[^>]*>\s*(?:The\s+Archives\s*:\s*)?([^<]+)</h1>", r.text, re.I | re.DOTALL)
+    if m:
+        title = m.group(1).strip()
+        title = re.sub(r"\s+", " ", title)
+        if title:
+            return title
+    # Fallback: first h1 text
+    m = re.search(r"<h1[^>]*>([^<]+)</h1>", r.text, re.I)
+    if m:
+        return re.sub(r"\s+", " ", m.group(1).strip())
+    return None
+
+
+def fetch_creature_titles_you_have(username: str) -> set[str]:
+    """
+    Get profile slugs, then visit each creature page and extract species name.
+    Returns set of normalized titles (species names) you have on Eggcave.
+    """
+    slugs = fetch_eggcave_creature_slugs(username)
+    if not slugs:
+        return set()
+
+    titles = set()
+    for i, slug in enumerate(sorted(slugs)):
+        name = fetch_species_name_from_creature_page(slug)
+        if name:
+            titles.add(_normalize_title(name))
+        if (i + 1) % 10 == 0:
+            print(f"  Checked {i + 1}/{len(slugs)} creature pages...")
+    return titles
 
 
 def _find_next_profile_page(html: str, current_url: str) -> Optional[str]:
@@ -166,16 +223,16 @@ def main():
         print("(Site URL is set in the script or EGGCAVITY_URL env.)", file=sys.stderr)
         sys.exit(1)
 
-    print(f"Fetching creatures you have from Eggcave @{username}...")
-    have_slugs = fetch_eggcave_creature_slugs(username)
-    print(f"  Found {len(have_slugs)} creature(s) on your profile.")
+    print(f"Fetching your Eggcave profile @{username}...")
+    have_titles = fetch_creature_titles_you_have(username)
+    print(f"  Found {len(have_titles)} species name(s) from creature pages.")
 
     print("Fetching archive from eggcavity...")
     creatures = fetch_archive_creatures(site_url)
     print(f"  Archive has {len(creatures)} creature(s).")
 
-    have_normalized = {s.lower().strip() for s in have_slugs}
-    to_add = [c for c in creatures if (c.get("slug") or "").strip().lower() not in have_normalized]
+    # Match by species/title: only add if archive creature's title is not in what you have
+    to_add = [c for c in creatures if _normalize_title(c.get("title") or "") not in have_titles]
     if not to_add:
         print("Nothing to add: you have every archive creature (or archive is empty).")
         return

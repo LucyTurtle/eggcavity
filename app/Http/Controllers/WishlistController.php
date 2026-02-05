@@ -34,10 +34,40 @@ class WishlistController extends Controller
         ]);
     }
 
+    public function showCreatures()
+    {
+        $user = Auth::user();
+        $creatureWishlists = $user->creatureWishlists()->with('archiveItem')->orderBy('created_at', 'desc')->get();
+        return view('wishlists.creatures', [
+            'creatureWishlists' => $creatureWishlists,
+            'shareCreaturesUrl' => $user->wishlist_share_creatures_url,
+        ]);
+    }
+
+    public function showItems()
+    {
+        $user = Auth::user();
+        $itemWishlists = $user->itemWishlists()->with('item')->orderBy('created_at', 'desc')->get();
+        return view('wishlists.items', [
+            'itemWishlists' => $itemWishlists,
+            'shareItemsUrl' => $user->wishlist_share_items_url,
+        ]);
+    }
+
+    public function showTravels()
+    {
+        $user = Auth::user();
+        $travelWishlists = $user->travelWishlists()->with('item')->orderBy('created_at', 'desc')->get();
+        return view('wishlists.travels', [
+            'travelWishlists' => $travelWishlists,
+            'shareTravelsUrl' => $user->wishlist_share_travels_url,
+        ]);
+    }
+
     /** Find user by wishlist slug (slug of name). Name is unique so at most one match. */
     private function findOwnerBySlug(string $slug): User
     {
-        if (in_array($slug, ['add', 'share'], true)) {
+        if (in_array($slug, ['add', 'share', 'creatures', 'items', 'travels'], true)) {
             abort(404);
         }
         $owner = User::query()
