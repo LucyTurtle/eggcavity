@@ -14,10 +14,19 @@ use App\Http\Controllers\TravelSuggestionController;
 use App\Http\Controllers\TravelViewerController;
 use App\Http\Controllers\UserManagementController;
 use App\Http\Controllers\WishlistController;
+use App\Models\ArchiveItem;
 use App\Models\Item;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', fn () => view('home'))->name('home');
+
+// Public JSON API for archive creatures (used by standalone wishlist-sync script)
+Route::get('/api/archive-creatures', function () {
+    $creatures = ArchiveItem::query()
+        ->orderBy('title')
+        ->get(['id', 'title', 'slug']);
+    return response()->json(['creatures' => $creatures]);
+})->name('api.archive-creatures');
 
 Route::get('/archive', [ArchiveController::class, 'index'])->name('archive.index');
 Route::get('/archive/{slug}', [ArchiveController::class, 'show'])->name('archive.show');
