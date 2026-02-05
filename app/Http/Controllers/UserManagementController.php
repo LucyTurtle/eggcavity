@@ -74,6 +74,28 @@ class UserManagementController extends Controller
         return redirect()->route('users.index')->with('success', 'User updated.');
     }
 
+    public function updateRole(Request $request, User $user)
+    {
+        $valid = $request->validate([
+            'role' => ['required', 'string', Rule::in([User::ROLE_USER, User::ROLE_ADMIN, User::ROLE_DEVELOPER])],
+        ]);
+
+        if ($user->id === Auth::id() && $valid['role'] !== User::ROLE_DEVELOPER) {
+            return redirect()->back()->with('error', 'You cannot change your own role away from developer.');
+        }
+
+        if ($user->isDeveloper() && $valid['role'] !== User::ROLE_DEVELOPER) {
+            $developerCount = User::where('role', User::ROLE_DEVELOPER)->count();
+            if ($developerCount <= 1) {
+                return redirect()->back()->with('error', 'Cannot change role: at least one developer must remain.');
+            }
+        }
+
+        $user->update(['role' => $valid['role']]);
+
+        return redirect()->back()->with('success', 'Role updated to ' . $valid['role'] . '.');
+    }
+
     public function ban(User $user)
     {
         if ($user->id === Auth::id()) {

@@ -19,7 +19,9 @@ Or set env vars: EGGCAVE_USERNAME, EGGCAVITY_URL, EGGCAVITY_LOGIN, EGGCAVITY_PAS
 import argparse
 import re
 import sys
+import time
 import urllib.parse
+from typing import Optional
 
 try:
     import requests
@@ -28,6 +30,7 @@ except ImportError:
     sys.exit(1)
 
 EGGCAVE_BASE = "https://eggcave.com"
+EGGCAVE_DELAY = 0.4
 DEFAULT_HEADERS = {
     "User-Agent": "eggcave-wishlist-sync/1.0 (community script)",
     "Accept": "text/html,application/xhtml+xml,application/json",
@@ -35,8 +38,14 @@ DEFAULT_HEADERS = {
 }
 
 
+def _normalize_title(s: str) -> str:
+    if not s:
+        return ""
+    return " ".join(s.lower().strip().split())
+
+
 def fetch_eggcave_creature_slugs(username: str) -> set[str]:
-    """Scrape Eggcave profile page for /archives/... links = creatures the user has."""
+    """Scrape profile for /archives/... links (candidate creatures)."""
     url = f"{EGGCAVE_BASE}/@{username}"
     slugs = set()
     try:
@@ -46,15 +55,14 @@ def fetch_eggcave_creature_slugs(username: str) -> set[str]:
         print(f"Failed to fetch Eggcave profile {url}: {e}", file=sys.stderr)
         return slugs
 
-    # Match href="/archives/slug" or href="https://eggcave.com/archives/slug"
     for m in re.finditer(r'href\s*=\s*["\'](?:https?://[^"\']*?/archives/([^/"\'\s?#]+)|/archives/([^/"\'\s?#]+))["\']', r.text, re.I):
         slug = (m.group(1) or m.group(2) or "").strip()
         if slug and slug != "archives":
             slugs.add(slug)
 
-    # Also follow pagination on profile if present (e.g. "My creatures" with next page)
     next_url = _find_next_profile_page(r.text, url)
     while next_url:
+        time.sleep(EGGCAVE_DELAY)
         try:
             r = requests.get(next_url, headers=DEFAULT_HEADERS, timeout=30)
             r.raise_for_status()
@@ -69,7 +77,42 @@ def fetch_eggcave_creature_slugs(username: str) -> set[str]:
     return slugs
 
 
-def _find_next_profile_page(html: str, current_url: str) -> str | None:
+def fetch_species_name_from_creature_page(slug: str) -> Optional[str]:
+    """Fetch creature detail page and return species/title from h1."""
+    url = f"{EGGCAVE_BASE}/archives/{slug}"
+    try:
+        time.sleep(EGGCAVE_DELAY)
+        r = requests.get(url, headers=DEFAULT_HEADERS, timeout=30)
+        r.raise_for_status()
+    except requests.RequestException:
+        return None
+    m = re.search(r"<h1[^>]*>\s*(?:The\s+Archives\s*:\s*)?([^<]+)</h1>", r.text, re.I | re.DOTALL)
+    if m:
+        title = re.sub(r"\s+", " ", m.group(1).strip())
+        if title:
+            return title
+    m = re.search(r"<h1[^>]*>([^<]+)</h1>", r.text, re.I)
+    if m:
+        return re.sub(r"\s+", " ", m.group(1).strip())
+    return None
+
+
+def fetch_creature_titles_you_have(username: str) -> set[str]:
+    """Get profile slugs, visit each creature page, return normalized species names you have."""
+    slugs = fetch_eggcave_creature_slugs(username)
+    if not slugs:
+        return set()
+    titles = set()
+    for i, slug in enumerate(sorted(slugs)):
+        name = fetch_species_name_from_creature_page(slug)
+        if name:
+            titles.add(_normalize_title(name))
+        if (i + 1) % 10 == 0:
+            print(f"  Checked {i + 1}/{len(slugs)} creature pages...")
+    return titles
+
+
+def _find_next_profile_page(html: str, current_url: str) -> Optional[str]:
     """Find next page URL in profile pagination (rel=next or page=N+1)."""
     # rel="next"
     m = re.search(r'<a\s[^>]*rel\s*=\s*["\']next["\'][^>]*href\s*=\s*["\']([^"\']+)["\']', html, re.I)
@@ -106,7 +149,7 @@ def fetch_archive_creatures(site_url: str) -> list[dict]:
         return []
 
 
-def login_to_site(site_url: str, login: str, password: str) -> requests.Session | None:
+def login_to_site(site_url: str, login: str, password: str) -> Optional[requests.Session]:
     """Login to eggcavity; return session with cookies and CSRF for subsequent requests."""
     base = site_url.rstrip("/")
     session = requests.Session()
@@ -205,18 +248,17 @@ def main():
         print("Or set EGGCAVE_USERNAME, EGGCAVITY_URL, EGGCAVITY_LOGIN, EGGCAVITY_PASSWORD", file=sys.stderr)
         sys.exit(1)
 
-    print(f"Fetching creatures you have from Eggcave profile @{username}...")
-    have_slugs = fetch_eggcave_creature_slugs(username)
-    print(f"  Found {len(have_slugs)} creature(s) on your profile.")
+    print(f"Fetching your Eggcave profile @{username}...")
+    have_titles = fetch_creature_titles_you_have(username)
+    print(f"  Found {len(have_titles)} species name(s) from creature pages.")
 
     print("Fetching archive creature list from eggcavity...")
     creatures = fetch_archive_creatures(site_url)
     print(f"  Archive has {len(creatures)} creature(s).")
 
-    have_slugs_normalized = {s.lower().strip() for s in have_slugs}
     to_add = [
         c for c in creatures
-        if (c.get("slug") or "").strip().lower() not in have_slugs_normalized
+        if _normalize_title(c.get("title") or "") not in have_titles
     ]
     if not to_add:
         print("Nothing to add: you have every archive creature (or archive is empty).")
