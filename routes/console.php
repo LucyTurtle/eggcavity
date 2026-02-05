@@ -28,10 +28,14 @@ Schedule::call(function () {
         }
         $startLine = 'Started at ' . now()->toDateTimeString() . "\n";
         File::put($logPath, $startLine);
-        Artisan::call($command);
-        $output = Artisan::output();
-        if ($output !== '') {
-            File::append($logPath, $output);
+        try {
+            Artisan::call($command);
+            $output = Artisan::output();
+            if ($output !== '') {
+                File::append($logPath, $output);
+            }
+        } catch (\Throwable $e) {
+            File::append($logPath, "Error: " . $e->getMessage() . "\n" . $e->getTraceAsString());
         }
     }
 })->everyMinute();
