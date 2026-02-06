@@ -35,7 +35,7 @@
 
 <div class="card" style="margin-bottom: 1.5rem;">
     <h2 style="font-size: 1.25rem; margin: 0 0 0.25rem 0;">Run jobs manually</h2>
-    <p class="lead" style="margin: 0 0 1rem 0; font-size: 0.9375rem;">Schedule a job to run in the backend (not in the browser). It runs on the next scheduler tick, usually within a minute. Results appear below; refresh the page after the job runs to see the latest.</p>
+    <p class="lead" style="margin: 0 0 1rem 0; font-size: 0.9375rem;">Schedule a job to run in the backend (not in the browser). It runs on the next scheduler tick, usually within a minute. Archive and items scrapers run in <strong>new only</strong> mode (only creatures/items not already in the DB). Results appear below; refresh the page after the job runs to see the latest.</p>
     @foreach($jobLogs as $info)
         @php $hasLog = !empty(trim($info['last_log'])); @endphp
         <div class="manual-job-block" style="margin-bottom: 1.25rem; padding-bottom: 1.25rem; border-bottom: 1px solid var(--border);">
