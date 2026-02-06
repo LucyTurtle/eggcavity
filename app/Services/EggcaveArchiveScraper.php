@@ -527,10 +527,12 @@ class EggcaveArchiveScraper
 
     /**
      * Scrape listing (with pagination) and all subpages; store in DB.
+     * When $newOnly is true (default for automatic runs), only fetches detail pages for slugs not already in the DB.
      *
      * @param int|null $limit Max number of subpages to scrape (null = all)
+     * @param bool $newOnly If true, only scrape slugs that don't exist yet (skip existing)
      */
-    public function scrape(?int $limit = null): array
+    public function scrape(?int $limit = null, bool $newOnly = true): array
     {
         $this->log('Collecting all archive links (including pagination)...');
         $slugs = $this->collectAllSlugs();
@@ -538,11 +540,23 @@ class EggcaveArchiveScraper
             $slugs = array_slice($slugs, 0, $limit);
             $this->log('Limiting to first ' . $limit . ' items.');
         }
-        $this->log('Total items to scrape: ' . count($slugs));
+
+        if ($newOnly) {
+            $existingSlugs = ArchiveItem::whereIn('slug', $slugs)->pluck('slug')->all();
+            $slugs = array_values(array_diff($slugs, $existingSlugs));
+            $this->log('Only new: ' . count($slugs) . ' to scrape (rest already in DB).');
+        } else {
+            $this->log('Total items to scrape: ' . count($slugs));
+        }
+
+        if (empty($slugs)) {
+            $this->log('Nothing new to scrape.');
+            return ['created' => 0, 'updated' => 0, 'total' => 0];
+        }
 
         $created = 0;
         $updated = 0;
-        $sortOrder = 0;
+        $sortOrder = (int) (ArchiveItem::max('sort_order') ?? 0);
 
         foreach ($slugs as $slug) {
             $sortOrder++;

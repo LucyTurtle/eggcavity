@@ -216,6 +216,7 @@ class EggcaveItemsScraper
             'associated_shop' => null,
             'restock_price' => null,
             'is_retired' => false,
+            'is_cavecash' => false,
             'first_appeared' => null,
         ];
 
@@ -272,13 +273,19 @@ class EggcaveItemsScraper
         $isRetired = false;
         $isCavecash = false;
 
+        // CaveCash: page has <span class="has-text-success">... CaveCash Item</span> or "CaveCash Item" text
+        $fullHtml = $body->html();
+        if (stripos($fullHtml, 'CaveCash Item') !== false || stripos($fullHtml, 'icons/money.png') !== false) {
+            $isCavecash = true;
+        }
+
         $boxes = $body->filter('.box');
         foreach ($boxes as $boxNode) {
             $box = new Crawler($boxNode);
             $boxHtml = $box->html();
             $text = trim($box->text());
 
-            // Check if this is a CaveCash item: look for "CaveCash Item" text
+            // Also check inside each box (in case structure varies)
             if (stripos($boxHtml, 'CaveCash Item') !== false || stripos($text, 'CaveCash Item') !== false) {
                 $isCavecash = true;
             }
@@ -382,7 +389,11 @@ class EggcaveItemsScraper
         return $allSlugs;
     }
 
-    public function scrape(?int $limit = null): array
+    /**
+     * @param int|null $limit Max number of items to scrape (null = all new)
+     * @param bool $newOnly If true, only scrape slugs that don't exist yet (skip existing)
+     */
+    public function scrape(?int $limit = null, bool $newOnly = true): array
     {
         $this->log('Collecting all item links (including pagination)...');
         $slugs = $this->collectAllSlugs();
@@ -390,11 +401,23 @@ class EggcaveItemsScraper
             $slugs = array_slice($slugs, 0, $limit);
             $this->log('Limiting to first ' . $limit . ' items.');
         }
-        $this->log('Total items to scrape: ' . count($slugs));
+
+        if ($newOnly) {
+            $existingSlugs = Item::whereIn('slug', $slugs)->pluck('slug')->all();
+            $slugs = array_values(array_diff($slugs, $existingSlugs));
+            $this->log('Only new: ' . count($slugs) . ' to scrape (rest already in DB).');
+        } else {
+            $this->log('Total items to scrape: ' . count($slugs));
+        }
+
+        if (empty($slugs)) {
+            $this->log('Nothing new to scrape.');
+            return ['created' => 0, 'updated' => 0, 'total' => 0];
+        }
 
         $created = 0;
         $updated = 0;
-        $sortOrder = 0;
+        $sortOrder = (int) (Item::max('sort_order') ?? 0);
 
         foreach ($slugs as $slug) {
             $sortOrder++;
@@ -414,6 +437,7 @@ class EggcaveItemsScraper
                     'associated_shop' => null,
                     'restock_price' => null,
                     'is_retired' => false,
+                    'is_cavecash' => false,
                     'first_appeared' => null,
                 ];
             }
@@ -430,6 +454,7 @@ class EggcaveItemsScraper
                     'associated_shop' => $data['associated_shop'],
                     'restock_price' => $data['restock_price'],
                     'is_retired' => $data['is_retired'],
+                    'is_cavecash' => $data['is_cavecash'],
                     'first_appeared' => $data['first_appeared'],
                     'sort_order' => $sortOrder,
                 ]

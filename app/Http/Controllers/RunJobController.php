@@ -61,7 +61,14 @@ class RunJobController extends Controller
         $out = [];
         foreach (self::ALLOWED_JOBS as $command => $config) {
             $path = storage_path('logs/' . $config['log_file']);
-            $lastLog = File::exists($path) ? File::get($path) : '';
+            $lastLog = '';
+            if (File::exists($path)) {
+                try {
+                    $lastLog = File::get($path) ?: '';
+                } catch (\Throwable $e) {
+                    $lastLog = '(Could not read log file. If jobs run from cron as root, make storage/logs readable by the web server: chmod -R 755 storage/logs or run cron as the web user.)';
+                }
+            }
             $out[$command] = [
                 'command' => $command,
                 'label' => $config['label'],
