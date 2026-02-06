@@ -11,31 +11,38 @@ Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote')->hourly();
 
-// Daily at 12:30 AM: run creature and item scrapers
-Schedule::command('archive:scrape')->dailyAt('00:30');
-Schedule::command('items:scrape')->dailyAt('00:30');
+// Helper: run a command and write output to its dashboard log file (so "Last run" on dashboard always shows something)
+$runJobAndLog = function (string $command, string $trigger = 'scheduled'): void {
+    $logPath = RunJobController::getLogPathForCommand($command);
+    if (! $logPath) {
+        return;
+    }
+    $startLine = 'Started at ' . now()->toDateTimeString() . " ({$trigger})\n";
+    File::put($logPath, $startLine);
+    @chmod($logPath, 0644);
+    try {
+        Artisan::call($command);
+        $output = Artisan::output();
+        if ($output !== '') {
+            File::append($logPath, $output);
+        }
+    } catch (\Throwable $e) {
+        File::append($logPath, "Error: " . $e->getMessage() . "\n" . $e->getTraceAsString());
+    }
+    @chmod($logPath, 0644);
+};
 
-// Every minute: run any job that was requested from the dashboard "Run now" button (runs in backend, not in the browser)
-Schedule::call(function () {
+// Daily at 12:30 AM: run creature and item scrapers (and write to dashboard logs)
+Schedule::call(fn () => $runJobAndLog('archive:scrape'))->dailyAt('00:30');
+Schedule::call(fn () => $runJobAndLog('items:scrape'))->dailyAt('00:30');
+
+// Every minute: run any job that was requested from the dashboard "Run now" button, and write to dashboard logs
+Schedule::call(function () use ($runJobAndLog) {
     foreach (RunJobController::getAllowedCommands() as $command) {
         $cacheKey = RunJobController::PENDING_CACHE_PREFIX . $command;
         if (! Cache::pull($cacheKey)) {
             continue;
         }
-        $logPath = RunJobController::getLogPathForCommand($command);
-        if (! $logPath) {
-            continue;
-        }
-        $startLine = 'Started at ' . now()->toDateTimeString() . "\n";
-        File::put($logPath, $startLine);
-        try {
-            Artisan::call($command);
-            $output = Artisan::output();
-            if ($output !== '') {
-                File::append($logPath, $output);
-            }
-        } catch (\Throwable $e) {
-            File::append($logPath, "Error: " . $e->getMessage() . "\n" . $e->getTraceAsString());
-        }
+        $runJobAndLog($command, 'run now');
     }
 })->everyMinute();
