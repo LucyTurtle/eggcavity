@@ -390,8 +390,11 @@ class EggcaveItemsScraper
     }
 
     /**
+     * When $newOnly is true (default): only fetches detail pages for slugs not already in the DB.
+     * We never request existing links unless doing a full refresh (e.g. manual CLI with --full).
+     *
      * @param int|null $limit Max number of items to scrape (null = all new)
-     * @param bool $newOnly If true, only scrape slugs that don't exist yet (skip existing)
+     * @param bool $newOnly If true, only scrape slugs that don't exist yet; if false, re-scrape all (manual refresh only)
      */
     public function scrape(?int $limit = null, bool $newOnly = true): array
     {
