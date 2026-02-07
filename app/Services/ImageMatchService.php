@@ -98,42 +98,42 @@ class ImageMatchService
             return null;
         }
 
-        $img = @imagecreatefromstring($blob);
+        $img = @\imagecreatefromstring($blob);
         if ($img === false) {
             return null;
         }
 
-        $w = imagesx($img);
-        $h = imagesy($img);
+        $w = \imagesx($img);
+        $h = \imagesy($img);
         if ($w < 1 || $h < 1) {
-            imagedestroy($img);
+            \imagedestroy($img);
             return null;
         }
 
         // Copy into a non-interlaced truecolor image to avoid libpng "Interlace handling" warnings
         // when we later resample (png_read_image is used on interlaced PNGs).
-        $flat = imagecreatetruecolor($w, $h);
+        $flat = \imagecreatetruecolor($w, $h);
         if ($flat === false) {
-            imagedestroy($img);
+            \imagedestroy($img);
             return null;
         }
-        imagecopy($flat, $img, 0, 0, 0, 0, $w, $h);
-        imagedestroy($img);
+        \imagecopy($flat, $img, 0, 0, 0, 0, $w, $h);
+        \imagedestroy($img);
         $img = $flat;
 
         $size = 32;
-        $thumb = imagecreatetruecolor($size, $size);
+        $thumb = \imagecreatetruecolor($size, $size);
         if ($thumb === false) {
-            imagedestroy($img);
+            \imagedestroy($img);
             return null;
         }
-        imagecopyresampled($thumb, $img, 0, 0, 0, 0, $size, $size, $w, $h);
-        imagedestroy($img);
+        \imagecopyresampled($thumb, $img, 0, 0, 0, 0, $size, $size, $w, $h);
+        \imagedestroy($img);
 
         $sumR = $sumG = $sumB = $n = 0;
         for ($y = 0; $y < $size; $y++) {
             for ($x = 0; $x < $size; $x++) {
-                $rgb = imagecolorat($thumb, $x, $y);
+                $rgb = \imagecolorat($thumb, $x, $y);
                 $r = ($rgb >> 16) & 0xFF;
                 $g = ($rgb >> 8) & 0xFF;
                 $b = $rgb & 0xFF;
@@ -143,7 +143,7 @@ class ImageMatchService
                 $n++;
             }
         }
-        imagedestroy($thumb);
+        \imagedestroy($thumb);
 
         if ($n === 0) {
             return null;
