@@ -46,6 +46,28 @@ class ArchiveController extends Controller
             $query->where('dates', 'like', '%' . $request->dates_filter . '%');
         }
 
+        // Filter by number of evolutions (1 = 2 stages, 2 = 3 stages, 3 = 4 stages)
+        $evolutions = $request->integer('evolutions', 0);
+        if ($evolutions >= 1 && $evolutions <= 3) {
+            $stageCount = $evolutions + 1;
+            $query->withCount('stages')->having('stages_count', '=', $stageCount);
+        }
+
+        // Filter by habitat
+        if ($request->filled('habitat')) {
+            $query->where('habitat', 'like', '%' . $request->habitat . '%');
+        }
+
+        // Filter by evolves by stat (stage requirement contains Views, Clicks, or Feeds)
+        $allowedStats = ['views', 'clicks', 'feeds'];
+        $evolvesByStat = $request->get('evolves_by_stat');
+        if (is_string($evolvesByStat) && in_array(strtolower($evolvesByStat), $allowedStats, true)) {
+            $stat = strtolower($evolvesByStat);
+            $query->whereHas('stages', function ($q) use ($stat) {
+                $q->where('requirement', 'like', '%' . $stat . '%');
+            });
+        }
+
         // Sort: title or date added (created_at when we added to DB)
         $sort = $request->get('sort', 'title');
         $dir = $request->get('dir', 'asc');
@@ -76,6 +98,13 @@ class ArchiveController extends Controller
             ->pluck('availability')
             ->toArray();
 
+        $habitats = ArchiveItem::whereNotNull('habitat')
+            ->where('habitat', '!=', '')
+            ->distinct()
+            ->orderBy('habitat')
+            ->pluck('habitat')
+            ->toArray();
+
         // Distinct tags from all creatures (tags stored as JSON array)
         $allTags = ArchiveItem::whereNotNull('tags')
             ->get()
@@ -94,10 +123,14 @@ class ArchiveController extends Controller
             'gender_profile' => $request->get('gender_profile'),
             'availability_filter' => $request->get('availability'),
             'dates_filter' => $request->get('dates_filter'),
+            'evolutions_filter' => $evolutions >= 1 && $evolutions <= 3 ? $evolutions : null,
+            'habitat_filter' => $request->filled('habitat') ? $request->habitat : null,
+            'evolves_by_stat_filter' => is_string($evolvesByStat) && in_array(strtolower($evolvesByStat), $allowedStats, true) ? strtolower($evolvesByStat) : null,
             'sort' => $sort,
             'dir' => $dir,
             'genderProfiles' => $genderProfiles,
             'availabilities' => $availabilities,
+            'habitats' => $habitats,
             'tags' => $allTags,
         ]);
     }

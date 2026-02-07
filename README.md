@@ -157,6 +157,15 @@ sudo crontab -u www-data -e
 
 If cron runs as root, the log files may be owned by root and the dashboard might not be able to read them; you’d need to fix permissions (e.g. `chmod -R 755 storage/logs`) or run cron as the web user.
 
+### Scrapers and HTTP 403
+
+If the archive or items scraper fails with **HTTP 403** for `https://eggcave.com/archives` (or similar), EggCave is rejecting the request. Common causes:
+
+- **Server/datacenter IP** — Many sites block data-center IPs (e.g. AWS, DigitalOcean, Linode). The same scraper may work from your home connection but not from the server. The app sends browser-like headers (User-Agent, Referer, Accept-Language); if 403 persists, the host is likely blocking by IP.
+- **Rate limiting or bot protection** — Too many requests or patterns that look automated can trigger blocks.
+
+Options: run the scraper from a machine with a residential IP (e.g. a home server or a different host), or accept that automated scraping may not be allowed from your current server.
+
 ### What runs when
 
 - **00:30 daily** — `archive:scrape` and `items:scrape` (creature and item data; "new only").

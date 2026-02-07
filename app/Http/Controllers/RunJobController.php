@@ -72,7 +72,7 @@ class RunJobController extends Controller
     }
 
     /**
-     * @return array<string, array{command: string, label: string, log_file: string, last_log: string, last_trigger: string, last_at: string|null, last_at_eggcave: string|null}>
+     * @return array<string, array{command: string, label: string, log_file: string, last_log: string, last_log_display: string, last_trigger: string, last_at: string|null, last_at_eggcave: string|null}>
      */
     public static function getJobLogs(): array
     {
@@ -98,11 +98,18 @@ class RunJobController extends Controller
                     $lastAtEggcave = $parsed['at'];
                 }
             }
+            $triggerLabel = ($parsed['trigger'] === 'run now') ? 'manual' : $parsed['trigger'];
+            $lastLogDisplay = $lastLog;
+            if (! empty($lastAtEggcave) && $lastLog !== '') {
+                $rest = preg_replace('/^[^\n]+\n?/', '', $lastLog);
+                $lastLogDisplay = 'Started at ' . $lastAtEggcave . ' (' . $triggerLabel . ')' . "\n" . $rest;
+            }
             $out[$command] = [
                 'command' => $command,
                 'label' => $config['label'],
                 'log_file' => $config['log_file'],
                 'last_log' => $lastLog,
+                'last_log_display' => $lastLogDisplay,
                 'last_trigger' => $parsed['trigger'],
                 'last_at' => $parsed['at'],
                 'last_at_eggcave' => $lastAtEggcave,

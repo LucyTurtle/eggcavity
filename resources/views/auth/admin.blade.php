@@ -64,7 +64,7 @@
             </div>
             <details style="font-size: 0.875rem;">
                 <summary style="cursor: pointer; color: var(--accent);">Last run output</summary>
-                <pre class="job-log-pre" style="margin: 0.5rem 0 0; padding: 0.75rem; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-sm); overflow: auto; max-height: 20rem; font-size: 0.8125rem; white-space: pre-wrap; word-break: break-all;">{{ $info['last_log'] ? e($info['last_log']) : '(No run yet. Click "Run now" or wait for the daily schedule, then refresh this page.)' }}</pre>
+                <pre class="job-log-pre" style="margin: 0.5rem 0 0; padding: 0.75rem; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-sm); overflow: auto; max-height: 20rem; font-size: 0.8125rem; white-space: pre-wrap; word-break: break-all;">{{ isset($info['last_log_display']) && $info['last_log_display'] !== '' ? e($info['last_log_display']) : ($info['last_log'] ? e($info['last_log']) : '(No run yet. Click "Run now" or wait for the daily schedule, then refresh this page.)') }}</pre>
             </details>
         </div>
     @endforeach
