@@ -8,6 +8,7 @@
     <p class="lead">Admin area. You're signed in as <strong>{{ auth()->user()->name }}</strong> ({{ auth()->user()->role }}).</p>
 </div>
 
+@if(auth()->user()->isAdmin())
 <div class="card" style="margin-bottom: 1.5rem;">
     <h2 style="font-size: 1.25rem; margin: 0 0 0.25rem 0;">Automatic jobs</h2>
     <p class="lead" style="margin: 0 0 1rem 0; font-size: 0.9375rem;">Scheduled tasks run via the Laravel scheduler. Ensure cron runs <code>php artisan schedule:run</code> every minute.</p>
@@ -48,9 +49,16 @@
                     <input type="hidden" name="command" value="{{ $info['command'] }}">
                     <button type="submit" class="btn" style="padding: 0.35rem 0.75rem; font-size: 0.875rem;">Run now</button>
                 </form>
-                @if(!empty($info['last_at']))
+                @if(!empty($info['last_at_eggcave']))
+                    @php
+                        $triggerLabel = match($info['last_trigger'] ?? 'schedule') {
+                            'run now' => 'manual',
+                            'scheduled' => 'scheduled',
+                            default => $info['last_trigger'] ?? 'schedule',
+                        };
+                    @endphp
                     <span style="font-size: 0.8125rem; color: var(--text-secondary);">
-                        Last run: {{ $info['last_at'] }} ({{ $info['last_trigger'] ?? 'schedule' }})
+                        Last run: {{ $info['last_at_eggcave'] }} ({{ $triggerLabel }})
                     </span>
                 @endif
             </div>
@@ -61,10 +69,23 @@
         </div>
     @endforeach
 </div>
+@endif
 
 <div class="page-header" style="margin-top: 1.5rem;">
     <h2 style="font-size: 1.25rem; margin: 0 0 0.25rem 0;">Content</h2>
-    <p class="lead" style="margin: 0;">Add creatures or items here. Edit them from their archive or item page.</p>
+    @php
+        $canManageCreaturesItems = auth()->user()->isAdmin() || auth()->user()->isContentManager();
+        $canManageTravelSuggestions = auth()->user()->isAdmin() || auth()->user()->isTravelSuggestor();
+    @endphp
+    <p class="lead" style="margin: 0;">
+        @if($canManageCreaturesItems && $canManageTravelSuggestions)
+            Add creatures or items, manage travel suggestions, or approve image-based suggestions below. Edit creatures and items from their archive or item page.
+        @elseif($canManageCreaturesItems)
+            Add creatures or items here. Edit them from their archive or item page.
+        @else
+            Manage travel suggestions and approve or reject image-based suggestions below.
+        @endif
+    </p>
 </div>
 
 <style>
@@ -85,6 +106,7 @@
 </style>
 
 <div class="content-hub-grid">
+    @if(auth()->user()->isAdmin() || auth()->user()->isContentManager())
     <div class="content-hub-card">
         <h3>Add creature</h3>
         <p>Add a new creature to the archive. Edit existing creatures from the archive page.</p>
@@ -95,6 +117,8 @@
         <p>Add a new item to the catalog. Edit existing items from the item page.</p>
         <a href="{{ route('content.item.create') }}" class="btn">Add item</a>
     </div>
+    @endif
+    @if(auth()->user()->isAdmin() || auth()->user()->isTravelSuggestor())
     <div class="content-hub-card">
         <h3>Travel suggestions</h3>
         <p>Suggest which travel items go with specific creature stages.</p>
@@ -105,6 +129,7 @@
         <p>Review and approve or reject travel suggestions from the image-match job before they go live.</p>
         <a href="{{ route('content.pending-ai-travel-suggestions.index') }}" class="btn">Approve / reject suggestions</a>
     </div>
+    @endif
 </div>
 
 @if(auth()->user()->isDeveloper())

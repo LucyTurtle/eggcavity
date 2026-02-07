@@ -59,8 +59,8 @@ Route::middleware('auth')->group(function () {
     Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
     Route::get('/account', [AccountController::class, 'index'])->name('account');
     Route::post('/account/password', [AccountController::class, 'updatePassword'])->name('account.password.update');
-    // Admin for admin/developer (optional; users can still be logged in without access)
-    Route::get('/admin', [AdminController::class, 'index'])->name('admin')->middleware('role:admin,developer');
+    // Admin panel: full access for admin/developer; content_manager and travel_suggestor see only their content sections
+    Route::get('/admin', [AdminController::class, 'index'])->name('admin')->middleware('role:admin,developer,content_manager,travel_suggestor');
     Route::post('/admin/run-job', [RunJobController::class, 'run'])->name('admin.run-job')->middleware('role:admin,developer');
     // Content hub (admin, developer, content_manager, travel_suggestor)
     Route::middleware('role:admin,developer,content_manager,travel_suggestor')->prefix('admin/content')->name('content.')->group(function () {

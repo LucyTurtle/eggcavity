@@ -10,12 +10,12 @@ class AdminController extends Controller
 {
     public function index()
     {
-        $scheduledJobs = $this->getScheduledJobs();
-        $jobLogs = RunJobController::getJobLogs();
+        $user = Auth::user();
+        $showJobs = $user->isAdmin();
 
         return view('auth.admin', [
-            'scheduledJobs' => $scheduledJobs,
-            'jobLogs' => $jobLogs,
+            'scheduledJobs' => $showJobs ? $this->getScheduledJobs() : [],
+            'jobLogs' => $showJobs ? RunJobController::getJobLogs() : [],
         ]);
     }
 
