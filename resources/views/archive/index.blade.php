@@ -157,7 +157,10 @@
 
 @php
     $hasTags = !empty($selectedTags);
-    $hasFilters = $hasTags || ($gender_profile ?? '') !== '' || ($availability_filter ?? '') !== '' || ($dates_filter ?? '') !== '';
+    $hasEvolutions = isset($evolutions_filter) && $evolutions_filter >= 1 && $evolutions_filter <= 3;
+    $hasHabitat = !empty($habitat_filter);
+    $hasEvolvesByStat = !empty($evolves_by_stat_filter);
+    $hasFilters = $hasTags || ($gender_profile ?? '') !== '' || ($availability_filter ?? '') !== '' || ($dates_filter ?? '') !== '' || $hasEvolutions || $hasHabitat || $hasEvolvesByStat;
 @endphp
 @if($hasFilters)
     <div class="card archive-active-filters" style="border-color: var(--accent); background: var(--accent-muted); margin-bottom: 1rem;">
@@ -167,13 +170,16 @@
                 @foreach($selectedTags as $t)
                     <span class="archive-tag-chip">
                         <strong>{{ $t }}</strong>
-                        <a href="{{ route('archive.index', array_merge(request()->only(['q', 'sort', 'dir', 'gender_profile', 'availability', 'dates_filter']), ['tags' => array_values(array_diff($selectedTags, [$t]))])) }}" class="archive-tag-chip-remove" aria-label="Remove tag {{ $t }}">×</a>
+                        <a href="{{ route('archive.index', array_merge(request()->only(['q', 'sort', 'dir', 'gender_profile', 'availability', 'dates_filter', 'evolutions', 'habitat', 'evolves_by_stat']), ['tags' => array_values(array_diff($selectedTags, [$t]))])) }}" class="archive-tag-chip-remove" aria-label="Remove tag {{ $t }}">×</a>
                     </span>
                 @endforeach
             @endif
             @if($gender_profile ?? '')@if($hasTags)<span style="margin-left: 0.25rem;">·</span>@endif Gender: <strong>{{ $gender_profile }}</strong>@endif
             @if($availability_filter ?? '')@if($hasTags || ($gender_profile ?? ''))<span style="margin-left: 0.25rem;">·</span>@endif Availability: <strong>{{ $availability_filter }}</strong>@endif
             @if($dates_filter ?? '')@if($hasTags || ($gender_profile ?? '') || ($availability_filter ?? ''))<span style="margin-left: 0.25rem;">·</span>@endif Dates: <strong>{{ $dates_filter }}</strong>@endif
+            @if($hasEvolutions)@if($hasTags || ($gender_profile ?? '') || ($availability_filter ?? '') || ($dates_filter ?? ''))<span style="margin-left: 0.25rem;">·</span>@endif Evolutions: <strong>{{ $evolutions_filter === 1 ? 'One (1)' : ($evolutions_filter === 2 ? 'Two (2)' : 'Three (3)') }}</strong>@endif
+            @if($hasHabitat)@if($hasTags || ($gender_profile ?? '') || ($availability_filter ?? '') || ($dates_filter ?? '') || $hasEvolutions)<span style="margin-left: 0.25rem;">·</span>@endif Habitat: <strong>{{ $habitat_filter }}</strong>@endif
+            @if($hasEvolvesByStat)@if($hasTags || ($gender_profile ?? '') || ($availability_filter ?? '') || ($dates_filter ?? '') || $hasEvolutions || $hasHabitat)<span style="margin-left: 0.25rem;">·</span>@endif Evolves by stat: <strong>{{ ucfirst($evolves_by_stat_filter) }}</strong>@endif
             <a href="{{ route('archive.index', ['sort' => $sort, 'dir' => $dir]) }}" style="margin-left: 0.5rem; color: var(--accent); font-weight: 500;">Clear filters</a>
         </p>
     </div>
@@ -185,6 +191,9 @@
     @if($gender_profile ?? '')<input type="hidden" name="gender_profile" value="{{ $gender_profile }}">@endif
     @if($availability_filter ?? '')<input type="hidden" name="availability" value="{{ $availability_filter }}">@endif
     @if($dates_filter ?? '')<input type="hidden" name="dates_filter" value="{{ $dates_filter }}">@endif
+    @if($evolutions_filter ?? '')<input type="hidden" name="evolutions" value="{{ $evolutions_filter }}">@endif
+    @if($habitat_filter ?? '')<input type="hidden" name="habitat" value="{{ $habitat_filter }}">@endif
+    @if($evolves_by_stat_filter ?? '')<input type="hidden" name="evolves_by_stat" value="{{ $evolves_by_stat_filter }}">@endif
     <input type="hidden" name="sort" value="{{ $sort }}">
     <input type="hidden" name="dir" value="{{ $dir }}">
     <button type="submit">Search</button>
@@ -195,6 +204,9 @@
     @if($gender_profile ?? '')<input type="hidden" name="gender_profile" value="{{ $gender_profile }}">@endif
     @if($availability_filter ?? '')<input type="hidden" name="availability" value="{{ $availability_filter }}">@endif
     @if($dates_filter ?? '')<input type="hidden" name="dates_filter" value="{{ $dates_filter }}">@endif
+    @if($evolutions_filter ?? '')<input type="hidden" name="evolutions" value="{{ $evolutions_filter }}">@endif
+    @if($habitat_filter ?? '')<input type="hidden" name="habitat" value="{{ $habitat_filter }}">@endif
+    @if($evolves_by_stat_filter ?? '')<input type="hidden" name="evolves_by_stat" value="{{ $evolves_by_stat_filter }}">@endif
     <div class="archive-toolbar__field archive-tags-dropdown-wrap">
         <label id="archive-tags-label">Tags</label>
         <div class="archive-tags-dropdown" id="archive-tags-dropdown">
@@ -261,6 +273,33 @@
     <div class="archive-toolbar__field">
         <label for="dates_filter">Dates (year/month)</label>
         <input type="month" name="dates_filter" id="dates_filter" value="{{ $dates_filter ?? '' }}" onchange="this.form.submit()">
+    </div>
+    <div class="archive-toolbar__field">
+        <label for="evolutions">Number of evolutions</label>
+        <select name="evolutions" id="evolutions" onchange="this.form.submit()">
+            <option value="">All</option>
+            <option value="1" {{ ($evolutions_filter ?? '') === 1 ? 'selected' : '' }}>One (1)</option>
+            <option value="2" {{ ($evolutions_filter ?? '') === 2 ? 'selected' : '' }}>Two (2)</option>
+            <option value="3" {{ ($evolutions_filter ?? '') === 3 ? 'selected' : '' }}>Three (3)</option>
+        </select>
+    </div>
+    <div class="archive-toolbar__field">
+        <label for="habitat">Habitat</label>
+        <select name="habitat" id="habitat" onchange="this.form.submit()">
+            <option value="">Please Select</option>
+            @foreach($habitats ?? [] as $h)
+                <option value="{{ $h }}" {{ ($habitat_filter ?? '') === $h ? 'selected' : '' }}>{{ $h }}</option>
+            @endforeach
+        </select>
+    </div>
+    <div class="archive-toolbar__field">
+        <label for="evolves_by_stat">Evolves by stat</label>
+        <select name="evolves_by_stat" id="evolves_by_stat" onchange="this.form.submit()">
+            <option value="">Please Select</option>
+            <option value="views" {{ ($evolves_by_stat_filter ?? '') === 'views' ? 'selected' : '' }}>Views</option>
+            <option value="clicks" {{ ($evolves_by_stat_filter ?? '') === 'clicks' ? 'selected' : '' }}>Clicks</option>
+            <option value="feeds" {{ ($evolves_by_stat_filter ?? '') === 'feeds' ? 'selected' : '' }}>Feeds</option>
+        </select>
     </div>
 </form>
 
