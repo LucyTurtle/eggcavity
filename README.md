@@ -128,9 +128,39 @@ Then run `php artisan migrate`.
 
 ## Scheduled tasks
 
-Ensure the scheduler runs every minute (cron: `* * * * * cd /path/to/app && php artisan schedule:run`). Then:
+The scrapers and "Run now" jobs only run when Laravel’s scheduler is invoked. You need **one cron entry** on the server.
 
-- **00:30 daily** — `archive:scrape` and `items:scrape` (creature and item data).
+### 1. Add a cron entry
+
+On the machine where the app runs (e.g. your production server), run:
+
+```bash
+crontab -e
+```
+
+Add this line (replace `/path/to/eggcave-fan-site` with your app’s path):
+
+```cron
+* * * * * cd /path/to/eggcave-fan-site && php artisan schedule:run >> /dev/null 2>&1
+```
+
+That runs every minute and Laravel then runs whatever is due (daily scrapers at 00:30, and any "Run now" requests from the dashboard).
+
+### 2. Run cron as the web server user (recommended)
+
+If you run cron as the same user as the web server (e.g. `www-data`), the scraper log files in `storage/logs/` will be readable by the app and the dashboard "Last run" output will work. Example:
+
+```bash
+sudo crontab -u www-data -e
+# same line as above, with the correct path
+```
+
+If cron runs as root, the log files may be owned by root and the dashboard might not be able to read them; you’d need to fix permissions (e.g. `chmod -R 755 storage/logs`) or run cron as the web user.
+
+### What runs when
+
+- **00:30 daily** — `archive:scrape` and `items:scrape` (creature and item data; "new only").
+- **Every minute** — Any job queued from Dashboard → "Run now" (runs within about a minute).
 
 ## AI travel suggestions (optional)
 
@@ -141,6 +171,7 @@ Suggest travels per creature using **free local image color analysis** (no API k
 - `php artisan items:scrape` — Scrape items from EggCave (run when needed to refresh catalog)
 - `php artisan archive:scrape` — Scrape archive creature/stage data
 - `php artisan travels:suggest-by-image` — Suggest travels by comparing creature and travel images (free; requires `image_url` on creatures and travels; use `--limit`, `--travel-limit`, `--min-score`)
+- `php artisan wishlist:sync-creatures {username}` — Sync creature wishlist: uses your username (same on eggcavity and Eggcave) to find your account and your Eggcave profile, then adds every archive creature you don’t have to your creature wishlist. Use `--clear` to clear the wishlist first. Example: `php artisan wishlist:sync-creatures lbowe_elbow --clear`
 
 ## Tech stack
 

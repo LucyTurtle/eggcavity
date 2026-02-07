@@ -393,6 +393,16 @@ class WishlistController extends Controller
         return back()->with('success', 'Travel wishlist entry updated.');
     }
 
+    /**
+     * Clear all creature wishlist entries for the authenticated user.
+     * Used by the sync script with --clear so the wishlist is repopulated from scratch.
+     */
+    public function clearCreatures()
+    {
+        $deleted = Auth::user()->creatureWishlists()->delete();
+        return back()->with('success', "Cleared creature wishlist ({$deleted} removed).");
+    }
+
     public function removeCreature(CreatureWishlist $creatureWishlist)
     {
         if ($creatureWishlist->user_id !== Auth::id()) {

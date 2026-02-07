@@ -2,8 +2,10 @@
 
 use App\Http\Controllers\AccountController;
 use App\Http\Controllers\ArchiveController;
+use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
+use App\Http\Controllers\Auth\ResetPasswordController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ImpersonationController;
 use App\Http\Controllers\RunJobController;
@@ -46,6 +48,10 @@ Route::middleware('guest')->group(function () {
     Route::post('/login', [LoginController::class, 'login']);
     Route::get('/register', [RegisterController::class, 'showRegistrationForm'])->name('register');
     Route::post('/register', [RegisterController::class, 'register']);
+    Route::get('/forgot-password', [ForgotPasswordController::class, 'showLinkRequestForm'])->name('password.request');
+    Route::post('/forgot-password', [ForgotPasswordController::class, 'sendResetLinkEmail'])->name('password.email');
+    Route::get('/reset-password/{token}', [ResetPasswordController::class, 'showResetForm'])->name('password.reset');
+    Route::post('/reset-password', [ResetPasswordController::class, 'reset'])->name('password.update');
 });
 
 // Auth: authenticated routes
@@ -109,6 +115,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/wishlists/add/travels', [WishlistController::class, 'showAddTravels'])->name('wishlists.add.travels');
     Route::get('/wishlist/travels/add/{item}', fn (Item $item) => redirect()->route('wishlists.add.travels'))->name('wishlist.travel.add');
     Route::post('/wishlist/creatures/batch', [WishlistController::class, 'storeCreatures'])->name('wishlist.creatures.store');
+    Route::post('/wishlist/creatures/clear', [WishlistController::class, 'clearCreatures'])->name('wishlist.creatures.clear');
     Route::post('/wishlist/items/batch', [WishlistController::class, 'storeItems'])->name('wishlist.items.store');
     Route::post('/wishlist/travels/batch', [WishlistController::class, 'storeTravels'])->name('wishlist.travels.store');
     Route::post('/wishlist/creatures', [WishlistController::class, 'storeCreature'])->name('wishlist.creature.store');
