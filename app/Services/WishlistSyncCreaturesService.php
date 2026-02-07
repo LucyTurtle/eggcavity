@@ -11,8 +11,8 @@ class WishlistSyncCreaturesService
     private const EGGCAVE_BASE = 'https://eggcave.com';
     private const REQUEST_DELAY_MS_MIN = 45;
     private const REQUEST_DELAY_MS_MAX = 1500;
-    /** Average seconds per HTTP request (network latency) for run-time estimate */
-    private const ESTIMATE_REQUEST_SEC = 0.2;
+    /** Seconds per request for run-time estimate (from real runs: ~1043 requests in ~20 min ≈ 1.2s/request) */
+    private const ESTIMATE_SEC_PER_REQUEST = 1.2;
 
     private function httpHeaders(): array
     {
@@ -88,8 +88,7 @@ class WishlistSyncCreaturesService
         if ($onProgress !== null) {
             $onProgress("{$total} creature link(s) found on profile.");
             if ($total > 0) {
-                $avgDelaySec = (self::REQUEST_DELAY_MS_MIN + self::REQUEST_DELAY_MS_MAX) / 2 / 1000;
-                $estimatedSec = (int) ceil($total * ($avgDelaySec + self::ESTIMATE_REQUEST_SEC));
+                $estimatedSec = (int) ceil($total * self::ESTIMATE_SEC_PER_REQUEST);
                 if ($estimatedSec < 60) {
                     $onProgress('Estimated run time: ~' . $estimatedSec . ' second(s).');
                 } else {
