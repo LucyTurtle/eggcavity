@@ -21,9 +21,14 @@ class ArchiveController extends Controller
             });
         }
 
-        // Filter by tag
-        if ($tag = $request->filled('tag') ? $request->tag : null) {
-            $query->whereJsonContains('tags', $tag);
+        // Filter by tags (any of the selected tags)
+        $selectedTags = array_values(array_filter((array) $request->input('tags', []), fn ($t) => is_string($t) && (string) $t !== ''));
+        if (count($selectedTags) > 0) {
+            $query->where(function ($q) use ($selectedTags) {
+                foreach ($selectedTags as $tag) {
+                    $q->orWhereJsonContains('tags', $tag);
+                }
+            });
         }
 
         // Filter by gender profile
@@ -71,10 +76,21 @@ class ArchiveController extends Controller
             ->pluck('availability')
             ->toArray();
 
+        // Distinct tags from all creatures (tags stored as JSON array)
+        $allTags = ArchiveItem::whereNotNull('tags')
+            ->get()
+            ->pluck('tags')
+            ->flatten()
+            ->unique()
+            ->filter()
+            ->sort()
+            ->values()
+            ->toArray();
+
         return view('archive.index', [
             'items' => $items,
             'search' => $request->get('q'),
-            'tag' => $request->get('tag'),
+            'selectedTags' => $selectedTags ?? [],
             'gender_profile' => $request->get('gender_profile'),
             'availability_filter' => $request->get('availability'),
             'dates_filter' => $request->get('dates_filter'),
@@ -82,6 +98,7 @@ class ArchiveController extends Controller
             'dir' => $dir,
             'genderProfiles' => $genderProfiles,
             'availabilities' => $availabilities,
+            'tags' => $allTags,
         ]);
     }
 

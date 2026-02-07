@@ -358,9 +358,11 @@
                     <div class="user-menu-dropdown" role="menu">
                         @auth
                             <div class="dropdown-header">{{ auth()->user()->name }}</div>
-                            @if(auth()->user()->isAdmin() || auth()->user()->isDeveloper())
-                                <a href="{{ route('dashboard') }}" role="menuitem" @if(request()->routeIs('dashboard')) class="active"
-                                @endif>Dashboard</a>
+                            @if(auth()->user()->isAdmin())
+                                <a href="{{ route('admin') }}" role="menuitem" @if(request()->routeIs('admin')) class="active"
+                                @endif>Admin</a>
+                            @endif
+                            @if(auth()->user()->canAccessContentArea())
                                 <a href="{{ route('content.index') }}" role="menuitem" @if(request()->routeIs('content.*')) class="active"
                                 @endif>Manage content</a>
                             @endif

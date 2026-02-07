@@ -46,6 +46,8 @@
                 <option value="user" {{ old('role', 'user') === 'user' ? 'selected' : '' }}>user</option>
                 <option value="admin" {{ old('role') === 'admin' ? 'selected' : '' }}>admin</option>
                 <option value="developer" {{ old('role') === 'developer' ? 'selected' : '' }}>developer</option>
+                <option value="content_manager" {{ old('role') === 'content_manager' ? 'selected' : '' }}>content_manager</option>
+                <option value="travel_suggestor" {{ old('role') === 'travel_suggestor' ? 'selected' : '' }}>travel_suggestor</option>
             </select>
             @error('role')<small style="color: #dc2626;">{{ $message }}</small>@enderror
         </div>

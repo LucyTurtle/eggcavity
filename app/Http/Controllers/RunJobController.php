@@ -30,12 +30,12 @@ class RunJobController extends Controller
     {
         $command = $request->input('command');
         if (! is_string($command) || ! isset(self::ALLOWED_JOBS[$command])) {
-            return redirect()->route('dashboard')->with('error', 'Invalid or disallowed command.');
+            return redirect()->route('admin')->with('error', 'Invalid or disallowed command.');
         }
 
         Cache::put(self::PENDING_CACHE_PREFIX . $command, true, now()->addMinutes(self::PENDING_TTL_MINUTES));
 
-        return redirect()->route('dashboard')->with('success', 'Job "' . $command . '" scheduled. It will run in the backend when the scheduler runs (usually within a minute). Check "Last run" logs below.');
+        return redirect()->route('admin')->with('success', 'Job "' . $command . '" scheduled. It will run in the backend when the scheduler runs (usually within a minute). Check "Last run" logs below.');
     }
 
     /**

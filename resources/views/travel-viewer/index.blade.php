@@ -7,14 +7,6 @@
     <h1>Travel viewer</h1>
     <p class="lead">Select a creature and a travel to see the travel on every stage.</p>
     <p style="font-size: 0.9375rem; color: var(--text-secondary); margin: 0.5rem 0 0 0;">Click a creature+travel stage below to save that combination; saved items are stored in your browser and can be removed anytime.</p>
-    <form method="get" action="{{ route('travel-viewer.index') }}" style="margin-top: 0.75rem;">
-        @if(request('creature'))<input type="hidden" name="creature" value="{{ request('creature') }}">@endif
-        @if(request('travel'))<input type="hidden" name="travel" value="{{ request('travel') }}">@endif
-        <label style="font-size: 0.9375rem; color: var(--text); margin: 0; display: inline-flex; align-items: center; gap: 0.5rem; cursor: pointer;">
-            <input type="checkbox" name="available" value="1" {{ $filterAvailable ? 'checked' : '' }} onchange="this.form.submit()">
-            Only show currently available travels (exclude retired &amp; cave cash only)
-        </label>
-    </form>
 </div>
 
 <style>
@@ -110,7 +102,15 @@
         </div>
         <input type="hidden" id="travel" value="{{ $initialTravel ?? '' }}">
     </div>
-    </div>
+    <form method="get" action="{{ route('travel-viewer.index') }}" style="margin-top: 0.75rem;">
+        @if(request('creature'))<input type="hidden" name="creature" value="{{ request('creature') }}">@endif
+        @if(request('travel'))<input type="hidden" name="travel" value="{{ request('travel') }}">@endif
+        <label style="font-size: 0.9375rem; color: var(--text); margin: 0; display: inline-flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+            <input type="checkbox" name="available" value="1" {{ $filterAvailable ? 'checked' : '' }} onchange="this.form.submit()">
+            Only show currently available travels
+        </label>
+    </form>
+</div>
 
 <div class="saved-combos card" id="saved-combos" style="max-width: 36rem; margin-top: 1.5rem;">
     <h3>Saved combinations</h3>

@@ -6,7 +6,7 @@ use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\ResetPasswordController;
-use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\AdminController;
 use App\Http\Controllers\ImpersonationController;
 use App\Http\Controllers\RunJobController;
 use App\Http\Controllers\ItemsController;
@@ -59,12 +59,15 @@ Route::middleware('auth')->group(function () {
     Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
     Route::get('/account', [AccountController::class, 'index'])->name('account');
     Route::post('/account/password', [AccountController::class, 'updatePassword'])->name('account.password.update');
-    // Dashboard for admin/developer (optional; users can still be logged in without access)
-    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard')->middleware('role:admin,developer');
-    Route::post('/dashboard/run-job', [RunJobController::class, 'run'])->name('dashboard.run-job')->middleware('role:admin,developer');
-    // Manage content (admin/developer)
-    Route::middleware('role:admin,developer')->prefix('dashboard/content')->name('content.')->group(function () {
+    // Admin for admin/developer (optional; users can still be logged in without access)
+    Route::get('/admin', [AdminController::class, 'index'])->name('admin')->middleware('role:admin,developer');
+    Route::post('/admin/run-job', [RunJobController::class, 'run'])->name('admin.run-job')->middleware('role:admin,developer');
+    // Content hub (admin, developer, content_manager, travel_suggestor)
+    Route::middleware('role:admin,developer,content_manager,travel_suggestor')->prefix('admin/content')->name('content.')->group(function () {
         Route::get('/', [ContentManagementController::class, 'index'])->name('index');
+    });
+    // Creatures + items (admin, developer, content_manager)
+    Route::middleware('role:admin,developer,content_manager')->prefix('admin/content')->name('content.')->group(function () {
         Route::get('creatures', [ContentManagementController::class, 'indexCreatures'])->name('creature.index');
         Route::get('creatures/create', [ContentManagementController::class, 'createCreature'])->name('creature.create');
         Route::post('creatures', [ContentManagementController::class, 'storeCreature'])->name('creature.store');
@@ -77,19 +80,25 @@ Route::middleware('auth')->group(function () {
         Route::get('items/{item}/edit', [ContentManagementController::class, 'editItem'])->name('item.edit');
         Route::put('items/{item}', [ContentManagementController::class, 'updateItem'])->name('item.update');
         Route::delete('items/{item}', [ContentManagementController::class, 'destroyItem'])->name('item.destroy');
+    });
+    // Travel suggestions + pending AI (admin, developer, travel_suggestor)
+    Route::middleware('role:admin,developer,travel_suggestor')->prefix('admin/content')->name('content.')->group(function () {
         Route::get('travel-suggestions', [TravelSuggestionController::class, 'index'])->name('travel-suggestions.index');
         Route::get('travel-suggestions/create', [TravelSuggestionController::class, 'create'])->name('travel-suggestions.create');
         Route::post('travel-suggestions', [TravelSuggestionController::class, 'store'])->name('travel-suggestions.store');
         Route::get('travel-suggestions/{travelSuggestion}/edit', [TravelSuggestionController::class, 'edit'])->name('travel-suggestions.edit');
         Route::put('travel-suggestions/{travelSuggestion}', [TravelSuggestionController::class, 'update'])->name('travel-suggestions.update');
         Route::delete('travel-suggestions/{travelSuggestion}', [TravelSuggestionController::class, 'destroy'])->name('travel-suggestions.destroy');
-        Route::post('archive/{slug}/apply-recommended-travels', [ArchiveController::class, 'applyRecommendedToAllStages'])->name('archive.apply-recommended-travels');
         Route::get('pending-ai-travel-suggestions', [PendingAiTravelSuggestionsController::class, 'index'])->name('pending-ai-travel-suggestions.index');
         Route::post('pending-ai-travel-suggestions/{pendingAiTravelSuggestion}/approve', [PendingAiTravelSuggestionsController::class, 'approve'])->name('pending-ai-travel-suggestions.approve');
         Route::post('pending-ai-travel-suggestions/{pendingAiTravelSuggestion}/reject', [PendingAiTravelSuggestionsController::class, 'reject'])->name('pending-ai-travel-suggestions.reject');
     });
+    // Apply recommended travels (admin, developer only)
+    Route::middleware('role:admin,developer')->prefix('admin/content')->name('content.')->group(function () {
+        Route::post('archive/{slug}/apply-recommended-travels', [ArchiveController::class, 'applyRecommendedToAllStages'])->name('archive.apply-recommended-travels');
+    });
     // User manager (developer only)
-    Route::middleware('role:developer')->prefix('dashboard/users')->name('users.')->group(function () {
+    Route::middleware('role:developer')->prefix('admin/users')->name('users.')->group(function () {
         Route::get('/', [UserManagementController::class, 'index'])->name('index');
         Route::get('create', [UserManagementController::class, 'create'])->name('create');
         Route::post('/', [UserManagementController::class, 'store'])->name('store');

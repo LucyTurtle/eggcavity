@@ -18,7 +18,7 @@ class ImpersonationController extends Controller
         }
 
         if ($user->id === Auth::id()) {
-            return redirect()->route('dashboard')->with('success', 'You are already viewing as yourself.');
+            return redirect()->route('admin')->with('success', 'You are already viewing as yourself.');
         }
 
         session([
@@ -44,6 +44,6 @@ class ImpersonationController extends Controller
             }
         }
 
-        return redirect()->route('dashboard')->with('success', 'Impersonation ended.');
+        return redirect()->route('admin')->with('success', 'Impersonation ended.');
     }
 }

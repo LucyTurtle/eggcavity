@@ -138,6 +138,19 @@
     }
     .archive-detail .tags-dropdown__panel .tags-list a:hover,
     .archive-detail .tags-list a:hover { background: var(--accent); color: white; }
+    .archive-detail .archive-tag-pills { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+    .archive-detail .archive-tag-pill {
+        display: inline-flex; align-items: center; gap: 0.25rem;
+        padding: 0.2rem 0.5rem; font-size: 0.875rem;
+        background: var(--accent-muted); color: var(--accent);
+        border-radius: var(--radius-sm); border: 1px solid var(--border);
+    }
+    .archive-detail .archive-tag-pill-remove {
+        padding: 0 0.2rem; font-size: 1.1rem; line-height: 1;
+        background: none; border: none; color: var(--text-secondary);
+        cursor: pointer; border-radius: 2px;
+    }
+    .archive-detail .archive-tag-pill-remove:hover { color: var(--accent); background: var(--bg); }
     .archive-detail .recommended-travels-grid {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
@@ -517,20 +530,36 @@
 
     @if(($item->tags && count($item->tags) > 0) || $canApplyRecommendations)
         <details class="tags-dropdown">
-            <summary>Tags@if($item->tags && count($item->tags) > 0) ({{ count($item->tags) }})@endif</summary>
+            <summary>Tags{{ ($item->tags && count($item->tags) > 0) ? ' (' . count($item->tags) . ')' : '' }}</summary>
             <div class="tags-dropdown__panel">
                 <div class="view-mode tags-list">
                     @if($item->tags && count($item->tags) > 0)
                         @foreach($item->tags as $tag)
-                            <a href="{{ route('archive.index', ['tag' => $tag]) }}">{{ $tag }}</a>
+                            <a href="{{ route('archive.index', ['tags' => [$tag]]) }}">{{ $tag }}</a>
                         @endforeach
                     @else
                         <p style="margin: 0; font-size: 0.875rem; color: var(--text-secondary);">No tags</p>
                     @endif
                 </div>
                 @if($canApplyRecommendations)
-                <div class="edit-mode" style="display: none; margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid var(--border);">
-                    <div class="form-group" style="margin: 0;"><label>Tags (comma-separated)</label><input type="text" name="tags" value="{{ old('tags', $item->tags ? (is_array($item->tags) ? implode(', ', $item->tags) : (string) $item->tags) : '') }}" placeholder="tag1, tag2, tag3"></div>
+                @php
+                    $tagsEditValue = old('tags', $item->tags ? (is_array($item->tags) ? implode(', ', $item->tags) : (string) $item->tags) : '');
+                    $tagsEditArray = $tagsEditValue !== '' ? array_values(array_filter(array_map('trim', explode(',', $tagsEditValue)))) : [];
+                @endphp
+                <div class="edit-mode archive-edit-tags" style="display: none; margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid var(--border);">
+                    <div class="form-group" style="margin: 0;">
+                        <label>Tags</label>
+                        <input type="hidden" name="tags" id="archive-tags-input" value="{{ $tagsEditValue }}">
+                        <div class="archive-tag-pills" id="archive-tag-pills">
+                            @foreach($tagsEditArray as $tagVal)
+                                <span class="archive-tag-pill" data-tag="{{ e($tagVal) }}">
+                                    {{ $tagVal }}
+                                    <button type="button" class="archive-tag-pill-remove" aria-label="Remove tag {{ e($tagVal) }}">×</button>
+                                </span>
+                            @endforeach
+                        </div>
+                        <input type="text" id="archive-tag-new" placeholder="Add tag…" autocomplete="off" style="margin-top: 0.5rem; max-width: 16rem;">
+                    </div>
                 </div>
                 @endif
             </div>
@@ -568,6 +597,64 @@
         updateToggleLabel();
     });
     updateToggleLabel();
+})();
+(function() {
+    var input = document.getElementById('archive-tags-input');
+    var pills = document.getElementById('archive-tag-pills');
+    var newInput = document.getElementById('archive-tag-new');
+    if (!input || !pills) return;
+    function getTags() {
+        var v = (input.value || '').trim();
+        return v ? v.split(',').map(function(s) { return s.trim(); }).filter(Boolean) : [];
+    }
+    function setTags(arr) {
+        input.value = arr.join(', ');
+    }
+    function syncPills() {
+        var tags = getTags();
+        pills.innerHTML = '';
+        tags.forEach(function(tag) {
+            var span = document.createElement('span');
+            span.className = 'archive-tag-pill';
+            span.setAttribute('data-tag', tag);
+            span.appendChild(document.createTextNode(tag + ' '));
+            var btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'archive-tag-pill-remove';
+            btn.setAttribute('aria-label', 'Remove tag ' + tag);
+            btn.textContent = '×';
+            btn.addEventListener('click', function() {
+                var arr = getTags().filter(function(t) { return t !== tag; });
+                setTags(arr);
+                syncPills();
+            });
+            span.appendChild(btn);
+            pills.appendChild(span);
+        });
+    }
+    pills.querySelectorAll('.archive-tag-pill-remove').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var tag = this.closest('.archive-tag-pill').getAttribute('data-tag');
+            var arr = getTags().filter(function(t) { return t !== tag; });
+            setTags(arr);
+            syncPills();
+        });
+    });
+    if (newInput) {
+        function addTag() {
+            var val = newInput.value.trim();
+            if (!val) return;
+            var arr = getTags();
+            if (arr.indexOf(val) === -1) arr.push(val);
+            setTags(arr);
+            syncPills();
+            newInput.value = '';
+        }
+        newInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') { e.preventDefault(); addTag(); }
+        });
+        newInput.addEventListener('blur', addTag);
+    }
 })();
 </script>
 @endif

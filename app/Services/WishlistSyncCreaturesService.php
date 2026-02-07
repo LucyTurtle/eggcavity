@@ -50,7 +50,7 @@ class WishlistSyncCreaturesService
         foreach ($toAdd as $item) {
             $user->creatureWishlists()->updateOrCreate(
                 ['archive_item_id' => $item->id],
-                ['amount' => 1, 'gender' => null, 'notes' => null]
+                ['amount' => 1, 'gender' => null, 'notes' => null, 'stage_number' => null]
             );
             $added++;
         }

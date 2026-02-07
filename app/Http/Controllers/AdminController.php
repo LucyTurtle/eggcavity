@@ -3,24 +3,17 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\RunJobController;
-use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 
-class DashboardController extends Controller
+class AdminController extends Controller
 {
     public function index()
     {
-        $users = collect();
-        if (Auth::user()->isDeveloper()) {
-            $users = User::orderBy('name')->get(['id', 'name', 'email', 'role']);
-        }
-
         $scheduledJobs = $this->getScheduledJobs();
         $jobLogs = RunJobController::getJobLogs();
 
-        return view('auth.dashboard', [
-            'users' => $users,
+        return view('auth.admin', [
             'scheduledJobs' => $scheduledJobs,
             'jobLogs' => $jobLogs,
         ]);
