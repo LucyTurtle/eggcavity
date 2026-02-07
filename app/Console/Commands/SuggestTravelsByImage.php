@@ -4,7 +4,7 @@ namespace App\Console\Commands;
 
 use App\Models\ArchiveItem;
 use App\Models\Item;
-use App\Models\PendingAiTravelSuggestion;
+use App\Models\PendingTravelSuggestion;
 use App\Models\TravelSuggestion;
 use App\Services\ImageMatchService;
 use Illuminate\Console\Command;
@@ -15,7 +15,8 @@ class SuggestTravelsByImage extends Command
                             {--limit= : Max creatures to process (default: all)}
                             {--travel-limit= : Max travels to score per creature (default: all with image)}
                             {--delay=0 : Seconds to wait between images (optional, to avoid hammering image hosts)}
-                            {--min-score=1 : Minimum score (1-10) to accept a suggestion}';
+                            {--min-score=1 : Minimum score (1-10) to accept a suggestion}
+                            {--clear : Clear all pending suggestions before running}';
 
     protected $description = 'Suggest travels per creature by comparing images (free local color analysis). Saves pending suggestions for approval.';
 
@@ -46,6 +47,14 @@ class SuggestTravelsByImage extends Command
         $travelLimit = $this->option('travel-limit') ? (int) $this->option('travel-limit') : null;
         $delay = (float) $this->option('delay');
         $minScore = (float) $this->option('min-score');
+        $clearFirst = $this->option('clear');
+
+        if ($clearFirst) {
+            $deleted = PendingTravelSuggestion::query()->count();
+            PendingTravelSuggestion::query()->delete();
+            $this->info("Cleared {$deleted} pending suggestion(s).");
+        }
+
         $created = 0;
         $travelHsvCache = [];
 
@@ -69,6 +78,7 @@ class SuggestTravelsByImage extends Command
             }
 
             $toScore = $travelLimit ? $travels->take($travelLimit) : $travels;
+            $toScore = $toScore->filter(fn ($travel) => stripos($travel->name, $creature->title . ' Stage') === false);
             $scores = [];
 
             foreach ($toScore as $travel) {
@@ -93,10 +103,9 @@ class SuggestTravelsByImage extends Command
             usort($scores, fn ($a, $b) => $b['score'] <=> $a['score']);
             $top = array_slice($scores, 0, 5);
 
-            $stageIds = $creature->stages->pluck('id')->toArray();
             $alreadySuggestedItemIds = array_unique(array_merge(
-                TravelSuggestion::whereIn('archive_stage_id', $stageIds)->pluck('item_id')->toArray(),
-                $creature->pendingAiTravelSuggestions()->pluck('item_id')->toArray()
+                TravelSuggestion::where('archive_item_id', $creature->id)->pluck('item_id')->toArray(),
+                $creature->pendingTravelSuggestions()->pluck('item_id')->toArray()
             ));
             $top = array_values(array_filter($top, fn ($entry) => ! in_array($entry['item']->id, $alreadySuggestedItemIds, true)));
 
@@ -105,9 +114,9 @@ class SuggestTravelsByImage extends Command
                 continue;
             }
 
-            $creature->pendingAiTravelSuggestions()->delete();
+            $creature->pendingTravelSuggestions()->delete();
             foreach ($top as $sortOrder => $entry) {
-                PendingAiTravelSuggestion::create([
+                PendingTravelSuggestion::create([
                     'archive_item_id' => $creature->id,
                     'item_id' => $entry['item']->id,
                     'sort_order' => $sortOrder + 1,

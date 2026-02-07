@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class TravelSuggestion extends Model
 {
     protected $fillable = [
-        'archive_stage_id',
+        'archive_item_id',
         'item_id',
         'notes',
         'sort_order',
@@ -18,9 +18,9 @@ class TravelSuggestion extends Model
         'sort_order' => 'integer',
     ];
 
-    public function archiveStage(): BelongsTo
+    public function archiveItem(): BelongsTo
     {
-        return $this->belongsTo(ArchiveStage::class);
+        return $this->belongsTo(ArchiveItem::class, 'archive_item_id');
     }
 
     public function item(): BelongsTo

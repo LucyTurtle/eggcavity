@@ -20,9 +20,4 @@ class ArchiveStage extends Model
     {
         return $this->belongsTo(ArchiveItem::class);
     }
-
-    public function travelSuggestions(): HasMany
-    {
-        return $this->hasMany(TravelSuggestion::class)->orderBy('sort_order');
-    }
 }

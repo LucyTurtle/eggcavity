@@ -5,9 +5,9 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class PendingAiTravelSuggestion extends Model
+class PendingTravelSuggestion extends Model
 {
-    protected $table = 'pending_ai_travel_suggestions';
+    protected $table = 'pending_travel_suggestions';
 
     protected $fillable = [
         'archive_item_id',

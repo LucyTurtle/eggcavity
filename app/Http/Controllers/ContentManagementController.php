@@ -17,14 +17,14 @@ class ContentManagementController extends Controller
         $canManageCreatures = $user->isAdmin() || $user->isContentManager();
         $canManageItems = $user->isAdmin() || $user->isContentManager();
         $canManageTravelSuggestions = $user->isAdmin() || $user->isTravelSuggestor();
-        $canManagePendingAi = $user->isAdmin() || $user->isTravelSuggestor();
+        $canManagePendingSuggestions = $user->isAdmin() || $user->isTravelSuggestor();
         $canAccessAdmin = $user->isAdmin();
 
         return view('content.index', [
             'canManageCreatures' => $canManageCreatures,
             'canManageItems' => $canManageItems,
             'canManageTravelSuggestions' => $canManageTravelSuggestions,
-            'canManagePendingAi' => $canManagePendingAi,
+            'canManagePendingSuggestions' => $canManagePendingSuggestions,
             'canAccessAdmin' => $canAccessAdmin,
         ]);
     }

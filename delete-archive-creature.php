@@ -35,10 +35,8 @@ if (strtolower($line) !== 'yes') {
 
 // Delete related records (in case DB cascades aren't enabled)
 $item->creatureWishlists()->delete();
-$item->pendingAiTravelSuggestions()->delete();
-foreach ($item->stages as $stage) {
-    $stage->travelSuggestions()->delete();
-}
+$item->pendingTravelSuggestions()->delete();
+$item->travelSuggestions()->delete();
 $item->stages()->delete();
 $item->images()->delete();
 $item->delete();

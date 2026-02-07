@@ -5,7 +5,7 @@
 @section('content')
 <div class="page-header">
     <h1>Pending travel suggestions (image match)</h1>
-    <p class="lead">Approve or reject image-based travel suggestions (up to 5 per creature). Approved suggestions are added to all stages of that creature.</p>
+    <p class="lead">Approve or reject image-based travel suggestions (up to 5 per creature). Approved suggestions are added for that creature.</p>
 </div>
 
 <style>
@@ -39,7 +39,7 @@
     <p style="font-size: 0.9375rem; color: var(--text-secondary); margin-bottom: 1rem;">Showing {{ $creaturesPage->firstItem() }}–{{ $creaturesPage->lastItem() }} of {{ $creaturesPage->total() }} creature(s) with pending suggestions.</p>
     @foreach($creaturesPage as $creature)
         @php
-            $pendingList = $creature->pendingAiTravelSuggestions;
+            $pendingList = $creature->pendingTravelSuggestions;
         @endphp
         <div class="creature-group">
             <h3>
@@ -84,11 +84,11 @@
                             </td>
                             <td>
                                 <div class="content-actions">
-                                    <form method="post" action="{{ route('content.pending-ai-travel-suggestions.approve', $pending) }}">
+                                    <form method="post" action="{{ route('content.pending-travel-suggestions.approve', $pending) }}">
                                         @csrf
                                         <button type="submit" class="btn-sm btn-approve">Approve</button>
                                     </form>
-                                    <form method="post" action="{{ route('content.pending-ai-travel-suggestions.reject', $pending) }}" onsubmit="return confirm('Reject this suggestion?');">
+                                    <form method="post" action="{{ route('content.pending-travel-suggestions.reject', $pending) }}" onsubmit="return confirm('Reject this suggestion?');">
                                         @csrf
                                         <button type="submit" class="btn-sm btn-reject">Reject</button>
                                     </form>

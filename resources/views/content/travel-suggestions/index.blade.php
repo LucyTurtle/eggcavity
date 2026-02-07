@@ -5,7 +5,7 @@
 @section('content')
 <div class="page-header">
     <h1>Travel suggestions</h1>
-    <p class="lead">Manage travel suggestions for creature stages.</p>
+    <p class="lead">Manage travel suggestions per creature (recommended for the whole creature).</p>
 </div>
 
 <style>
@@ -54,7 +54,6 @@
         <thead>
             <tr>
                 <th>Creature</th>
-                <th>Stage</th>
                 <th>Travel</th>
                 <th>Notes</th>
                 <th style="width: 12rem;">Actions</th>
@@ -64,11 +63,10 @@
             @foreach($suggestions as $suggestion)
                 <tr>
                     <td>
-                        <a href="{{ route('archive.show', $suggestion->archiveStage->archiveItem->slug) }}">
-                            {{ $suggestion->archiveStage->archiveItem->title }}
+                        <a href="{{ route('archive.show', $suggestion->archiveItem->slug) }}">
+                            {{ $suggestion->archiveItem->title }}
                         </a>
                     </td>
-                    <td>Stage {{ $suggestion->archiveStage->stage_number }}</td>
                     <td>
                         <a href="{{ route('items.show', $suggestion->item->slug) }}">
                             {{ $suggestion->item->name }}

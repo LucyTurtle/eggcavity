@@ -94,37 +94,8 @@
         font-size: 0.9375rem; 
     }
     .archive-detail .entry-by { font-size: 0.875rem; color: var(--text-secondary); margin-top: 1rem; }
-    .archive-detail .tags-dropdown { margin-top: 1rem; }
-    .archive-detail .tags-dropdown summary {
-        font-size: 0.9375rem;
-        font-weight: 600;
-        cursor: pointer;
-        list-style: none;
-        display: inline-flex;
-        align-items: center;
-        gap: 0.35rem;
-        padding: 0.35rem 0.5rem;
-        border-radius: var(--radius-sm);
-        background: var(--accent-muted);
-        color: var(--accent);
-        border: 1px solid transparent;
-        user-select: none;
-    }
-    .archive-detail .tags-dropdown summary::-webkit-details-marker { display: none; }
-    .archive-detail .tags-dropdown summary::after { content: '▼'; font-size: 0.65rem; opacity: 0.8; }
-    .archive-detail .tags-dropdown[open] summary::after { transform: scaleY(-1); }
-    .archive-detail .tags-dropdown__panel {
-        margin-top: 0.5rem;
-        padding: 0.75rem;
-        max-height: 14rem;
-        overflow-y: auto;
-        border: 1px solid var(--border);
-        border-radius: var(--radius-sm);
-        background: var(--surface);
-        box-shadow: var(--shadow);
-    }
-    .archive-detail .tags-dropdown__panel .tags-list a,
-    .archive-detail .tags-list a {
+    .archive-detail .archive-tags { margin-top: 1rem; }
+    .archive-detail .archive-tags .tags-list a {
         display: inline-block;
         font-size: 0.8125rem;
         padding: 0.25rem 0.5rem;
@@ -136,8 +107,7 @@
         text-decoration: none;
         transition: background 0.15s, color 0.15s;
     }
-    .archive-detail .tags-dropdown__panel .tags-list a:hover,
-    .archive-detail .tags-list a:hover { background: var(--accent); color: white; }
+    .archive-detail .archive-tags .tags-list a:hover { background: var(--accent); color: white; }
     .archive-detail .archive-tag-pills { display: flex; flex-wrap: wrap; gap: 0.35rem; }
     .archive-detail .archive-tag-pill {
         display: inline-flex; align-items: center; gap: 0.25rem;
@@ -529,41 +499,38 @@
     @endif
 
     @if(($item->tags && count($item->tags) > 0) || $canApplyRecommendations)
-        <details class="tags-dropdown">
-            <summary>Tags{{ ($item->tags && count($item->tags) > 0) ? ' (' . count($item->tags) . ')' : '' }}</summary>
-            <div class="tags-dropdown__panel">
-                <div class="view-mode tags-list">
-                    @if($item->tags && count($item->tags) > 0)
-                        @foreach($item->tags as $tag)
-                            <a href="{{ route('archive.index', ['tags' => [$tag]]) }}">{{ $tag }}</a>
-                        @endforeach
-                    @else
-                        <p style="margin: 0; font-size: 0.875rem; color: var(--text-secondary);">No tags</p>
-                    @endif
-                </div>
-                @if($canApplyRecommendations)
-                @php
-                    $tagsEditValue = old('tags', $item->tags ? (is_array($item->tags) ? implode(', ', $item->tags) : (string) $item->tags) : '');
-                    $tagsEditArray = $tagsEditValue !== '' ? array_values(array_filter(array_map('trim', explode(',', $tagsEditValue)))) : [];
-                @endphp
-                <div class="edit-mode archive-edit-tags" style="display: none; margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid var(--border);">
-                    <div class="form-group" style="margin: 0;">
-                        <label>Tags</label>
-                        <input type="hidden" name="tags" id="archive-tags-input" value="{{ $tagsEditValue }}">
-                        <div class="archive-tag-pills" id="archive-tag-pills">
-                            @foreach($tagsEditArray as $tagVal)
-                                <span class="archive-tag-pill" data-tag="{{ e($tagVal) }}">
-                                    {{ $tagVal }}
-                                    <button type="button" class="archive-tag-pill-remove" aria-label="Remove tag {{ e($tagVal) }}">×</button>
-                                </span>
-                            @endforeach
-                        </div>
-                        <input type="text" id="archive-tag-new" placeholder="Add tag…" autocomplete="off" style="margin-top: 0.5rem; max-width: 16rem;">
-                    </div>
-                </div>
+        <div class="archive-tags">
+            <div class="view-mode tags-list">
+                @if($item->tags && count($item->tags) > 0)
+                    @foreach($item->tags as $tag)
+                        <a href="{{ route('archive.index', ['tags' => [$tag]]) }}">{{ $tag }}</a>
+                    @endforeach
+                @else
+                    <p style="margin: 0; font-size: 0.875rem; color: var(--text-secondary);">No tags</p>
                 @endif
             </div>
-        </details>
+            @if($canApplyRecommendations)
+            @php
+                $tagsEditValue = old('tags', $item->tags ? (is_array($item->tags) ? implode(', ', $item->tags) : (string) $item->tags) : '');
+                $tagsEditArray = $tagsEditValue !== '' ? array_values(array_filter(array_map('trim', explode(',', $tagsEditValue)))) : [];
+            @endphp
+            <div class="edit-mode archive-edit-tags" style="display: none; margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid var(--border);">
+                <div class="form-group" style="margin: 0;">
+                    <label>Tags</label>
+                    <input type="hidden" name="tags" id="archive-tags-input" value="{{ $tagsEditValue }}">
+                    <div class="archive-tag-pills" id="archive-tag-pills">
+                        @foreach($tagsEditArray as $tagVal)
+                            <span class="archive-tag-pill" data-tag="{{ e($tagVal) }}">
+                                {{ $tagVal }}
+                                <button type="button" class="archive-tag-pill-remove" aria-label="Remove tag {{ e($tagVal) }}">×</button>
+                            </span>
+                        @endforeach
+                    </div>
+                    <input type="text" id="archive-tag-new" placeholder="Add tag…" autocomplete="off" style="margin-top: 0.5rem; max-width: 16rem;">
+                </div>
+            </div>
+            @endif
+        </div>
     @endif
 
     @if($canApplyRecommendations)

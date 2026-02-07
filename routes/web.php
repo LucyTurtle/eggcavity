@@ -11,7 +11,7 @@ use App\Http\Controllers\ImpersonationController;
 use App\Http\Controllers\RunJobController;
 use App\Http\Controllers\ItemsController;
 use App\Http\Controllers\ContentManagementController;
-use App\Http\Controllers\PendingAiTravelSuggestionsController;
+use App\Http\Controllers\PendingTravelSuggestionsController;
 use App\Http\Controllers\TravelSuggestionController;
 use App\Http\Controllers\TravelViewerController;
 use App\Http\Controllers\UserManagementController;
@@ -81,7 +81,7 @@ Route::middleware('auth')->group(function () {
         Route::put('items/{item}', [ContentManagementController::class, 'updateItem'])->name('item.update');
         Route::delete('items/{item}', [ContentManagementController::class, 'destroyItem'])->name('item.destroy');
     });
-    // Travel suggestions + pending AI (admin, developer, travel_suggestor)
+    // Travel suggestions + pending (image-based) suggestions (admin, developer, travel_suggestor)
     Route::middleware('role:admin,developer,travel_suggestor')->prefix('admin/content')->name('content.')->group(function () {
         Route::get('travel-suggestions', [TravelSuggestionController::class, 'index'])->name('travel-suggestions.index');
         Route::get('travel-suggestions/create', [TravelSuggestionController::class, 'create'])->name('travel-suggestions.create');
@@ -89,9 +89,9 @@ Route::middleware('auth')->group(function () {
         Route::get('travel-suggestions/{travelSuggestion}/edit', [TravelSuggestionController::class, 'edit'])->name('travel-suggestions.edit');
         Route::put('travel-suggestions/{travelSuggestion}', [TravelSuggestionController::class, 'update'])->name('travel-suggestions.update');
         Route::delete('travel-suggestions/{travelSuggestion}', [TravelSuggestionController::class, 'destroy'])->name('travel-suggestions.destroy');
-        Route::get('pending-ai-travel-suggestions', [PendingAiTravelSuggestionsController::class, 'index'])->name('pending-ai-travel-suggestions.index');
-        Route::post('pending-ai-travel-suggestions/{pendingAiTravelSuggestion}/approve', [PendingAiTravelSuggestionsController::class, 'approve'])->name('pending-ai-travel-suggestions.approve');
-        Route::post('pending-ai-travel-suggestions/{pendingAiTravelSuggestion}/reject', [PendingAiTravelSuggestionsController::class, 'reject'])->name('pending-ai-travel-suggestions.reject');
+        Route::get('pending-travel-suggestions', [PendingTravelSuggestionsController::class, 'index'])->name('pending-travel-suggestions.index');
+        Route::post('pending-travel-suggestions/{pendingTravelSuggestion}/approve', [PendingTravelSuggestionsController::class, 'approve'])->name('pending-travel-suggestions.approve');
+        Route::post('pending-travel-suggestions/{pendingTravelSuggestion}/reject', [PendingTravelSuggestionsController::class, 'reject'])->name('pending-travel-suggestions.reject');
     });
     // Apply recommended travels (admin, developer only)
     Route::middleware('role:admin,developer')->prefix('admin/content')->name('content.')->group(function () {
