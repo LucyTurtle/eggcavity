@@ -10,7 +10,7 @@ class ScrapeEggcaveItems extends Command
     protected $signature = 'items:scrape
                             {--delay=0.1 : Seconds to wait between requests (0 for fastest, default: 0.1)}
                             {--limit= : Max number of items to scrape (default: all)}
-                            {--full : Re-scrape everything (manual only; dashboard/cron always use new-only)}';
+                            {--full : Re-scrape everything (manual only; admin/cron always use new-only)}';
 
     protected $description = 'Scrape EggCave items. Default: only new items (never existing links). Use --full from CLI to refresh everything.';
 
@@ -26,7 +26,7 @@ class ScrapeEggcaveItems extends Command
         $limit = $this->option('limit');
         $limit = $limit !== null && $limit !== '' ? (int) $limit : null;
 
-        // Only new links unless --full (dashboard and cron never pass --full)
+        // Only new links unless --full (admin and cron never pass --full)
         $newOnly = ! $this->option('full');
         try {
             $result = $scraper->scrape($limit, $newOnly);

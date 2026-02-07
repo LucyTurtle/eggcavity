@@ -5,9 +5,12 @@
 @section('content')
 <div class="page-header">
     <h1>Archive</h1>
-    @if($tag)
-    <p class="lead"><span style="font-size: 0.9375rem;">Showing tagged: <strong>{{ $tag }}</strong></span></p>
-    @endif
+    <p class="lead">
+        @if(!empty($selectedTags))
+            <span style="font-size: 0.9375rem;">Showing tagged: <strong>{{ implode(', ', $selectedTags) }}</strong></span>
+        @endif
+        <span style="font-size: 0.9375rem;">{{ number_format($items->total()) }} {{ Str::plural('creature', $items->total()) }}</span>
+    </p>
 </div>
 
 <style>
@@ -120,18 +123,57 @@
     .archive-pagination ul.pagination span { background: var(--bg); color: var(--text-secondary); }
     .archive-pagination ul.pagination li.disabled span { cursor: not-allowed; }
     .archive-pagination ul.pagination li.active span { background: var(--accent-muted); border-color: var(--accent); color: var(--accent); }
+    .archive-tag-chip { display: inline-flex; align-items: center; gap: 0.2rem; padding: 0.2rem 0.5rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 0.875rem; }
+    .archive-tag-chip-remove { color: var(--text-secondary); text-decoration: none; font-size: 1.1rem; line-height: 1; padding: 0 0.15rem; border-radius: 2px; }
+    .archive-tag-chip-remove:hover { color: var(--accent); background: var(--bg); }
+    .archive-tags-dropdown { position: relative; display: inline-block; }
+    .archive-tags-dropdown__trigger {
+        display: inline-flex; align-items: center; gap: 0.35rem;
+        padding: 0.5rem 0.75rem; font-size: 0.9375rem;
+        background: var(--surface); color: var(--text);
+        border: 1px solid var(--border); border-radius: var(--radius-sm);
+        cursor: pointer; font-family: inherit;
+    }
+    .archive-tags-dropdown__trigger:hover { border-color: var(--accent); color: var(--accent); }
+    .archive-tags-dropdown__trigger[aria-expanded="true"] { border-color: var(--accent); background: var(--accent-muted); color: var(--accent); }
+    .archive-tags-dropdown__badge { font-size: 0.75rem; padding: 0.1rem 0.4rem; border-radius: 999px; background: var(--accent); color: white; }
+    .archive-tags-dropdown__panel {
+        display: none; position: absolute; top: 100%; left: 0; margin-top: 0.25rem;
+        min-width: 14rem; max-width: 20rem; max-height:  min(70vh, 24rem);
+        background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+        box-shadow: var(--shadow-lg); z-index: 50;
+        flex-direction: column;
+    }
+    .archive-tags-dropdown__panel.is-open { display: flex; }
+    .archive-tags-dropdown__search { padding: 0.5rem 0.75rem; border-bottom: 1px solid var(--border); }
+    .archive-tags-dropdown__search input { width: 100%; padding: 0.4rem 0.5rem; font-size: 0.875rem; border: 1px solid var(--border); border-radius: var(--radius-sm); box-sizing: border-box; }
+    .archive-tags-dropdown__list { overflow-y: auto; padding: 0.5rem; flex: 1; min-height: 0; }
+    .archive-tags-dropdown__list label { display: flex; align-items: center; gap: 0.5rem; padding: 0.35rem 0.5rem; font-size: 0.875rem; cursor: pointer; border-radius: var(--radius-sm); }
+    .archive-tags-dropdown__list label:hover { background: var(--accent-muted); }
+    .archive-tags-dropdown__list label.tag-search-hidden { display: none; }
+    .archive-tags-dropdown__footer { padding: 0.5rem 0.75rem; border-top: 1px solid var(--border); }
+    .archive-tags-dropdown__footer .btn { padding: 0.4rem 0.75rem; font-size: 0.875rem; }
 </style>
 
 @php
-    $hasFilters = $tag || ($gender_profile ?? '') !== '' || ($availability_filter ?? '') !== '' || ($dates_filter ?? '') !== '';
+    $hasTags = !empty($selectedTags);
+    $hasFilters = $hasTags || ($gender_profile ?? '') !== '' || ($availability_filter ?? '') !== '' || ($dates_filter ?? '') !== '';
 @endphp
 @if($hasFilters)
-    <div class="card" style="border-color: var(--accent); background: var(--accent-muted); margin-bottom: 1rem;">
-        <p style="margin: 0;">
-            @if($tag)Filtering by tag: <strong>{{ $tag }}</strong>@endif
-            @if($gender_profile ?? '')@if($tag) · @endif Gender: <strong>{{ $gender_profile }}</strong>@endif
-            @if($availability_filter ?? '')@if($tag || $gender_profile) · @endif Availability: <strong>{{ $availability_filter }}</strong>@endif
-            @if($dates_filter ?? '')@if($tag || $gender_profile || $availability_filter) · @endif Dates: <strong>{{ $dates_filter }}</strong>@endif
+    <div class="card archive-active-filters" style="border-color: var(--accent); background: var(--accent-muted); margin-bottom: 1rem;">
+        <p style="margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem;">
+            @if($hasTags)
+                <span>Filtering by tags:</span>
+                @foreach($selectedTags as $t)
+                    <span class="archive-tag-chip">
+                        <strong>{{ $t }}</strong>
+                        <a href="{{ route('archive.index', array_merge(request()->only(['q', 'sort', 'dir', 'gender_profile', 'availability', 'dates_filter']), ['tags' => array_values(array_diff($selectedTags, [$t]))])) }}" class="archive-tag-chip-remove" aria-label="Remove tag {{ $t }}">×</a>
+                    </span>
+                @endforeach
+            @endif
+            @if($gender_profile ?? '')@if($hasTags)<span style="margin-left: 0.25rem;">·</span>@endif Gender: <strong>{{ $gender_profile }}</strong>@endif
+            @if($availability_filter ?? '')@if($hasTags || ($gender_profile ?? ''))<span style="margin-left: 0.25rem;">·</span>@endif Availability: <strong>{{ $availability_filter }}</strong>@endif
+            @if($dates_filter ?? '')@if($hasTags || ($gender_profile ?? '') || ($availability_filter ?? ''))<span style="margin-left: 0.25rem;">·</span>@endif Dates: <strong>{{ $dates_filter }}</strong>@endif
             <a href="{{ route('archive.index', ['sort' => $sort, 'dir' => $dir]) }}" style="margin-left: 0.5rem; color: var(--accent); font-weight: 500;">Clear filters</a>
         </p>
     </div>
@@ -139,7 +181,7 @@
 
 <form method="get" action="{{ route('archive.index') }}" class="archive-toolbar">
     <input type="search" name="q" value="{{ old('q', $search) }}" placeholder="Search by name..." aria-label="Search by name">
-    @if($tag)<input type="hidden" name="tag" value="{{ $tag }}">@endif
+    @foreach($selectedTags ?? [] as $t)<input type="hidden" name="tags[]" value="{{ $t }}">@endforeach
     @if($gender_profile ?? '')<input type="hidden" name="gender_profile" value="{{ $gender_profile }}">@endif
     @if($availability_filter ?? '')<input type="hidden" name="availability" value="{{ $availability_filter }}">@endif
     @if($dates_filter ?? '')<input type="hidden" name="dates_filter" value="{{ $dates_filter }}">@endif
@@ -148,12 +190,42 @@
     <button type="submit">Search</button>
 </form>
 
-<form method="get" action="{{ route('archive.index') }}" class="archive-toolbar archive-toolbar--filters">
+<form method="get" action="{{ route('archive.index') }}" class="archive-toolbar archive-toolbar--filters" id="archive-filters-form">
     @if(request('q'))<input type="hidden" name="q" value="{{ request('q') }}">@endif
-    @if($tag)<input type="hidden" name="tag" value="{{ $tag }}">@endif
     @if($gender_profile ?? '')<input type="hidden" name="gender_profile" value="{{ $gender_profile }}">@endif
     @if($availability_filter ?? '')<input type="hidden" name="availability" value="{{ $availability_filter }}">@endif
     @if($dates_filter ?? '')<input type="hidden" name="dates_filter" value="{{ $dates_filter }}">@endif
+    <div class="archive-toolbar__field archive-tags-dropdown-wrap">
+        <label id="archive-tags-label">Tags</label>
+        <div class="archive-tags-dropdown" id="archive-tags-dropdown">
+            <button type="button" class="archive-tags-dropdown__trigger" id="archive-tags-trigger" aria-haspopup="true" aria-expanded="false" aria-labelledby="archive-tags-label">
+                Tags
+                @if(!empty($selectedTags))
+                    <span class="archive-tags-dropdown__badge" id="archive-tags-badge">{{ count($selectedTags) }}</span>
+                @endif
+            </button>
+            <div class="archive-tags-dropdown__panel" id="archive-tags-panel" role="dialog" aria-label="Filter by tags" hidden>
+                <div class="archive-tags-dropdown__search">
+                    <input type="text" id="archive-tags-search" placeholder="Search tags…" autocomplete="off" aria-label="Search tags">
+                </div>
+                <div class="archive-tags-dropdown__list" role="group" aria-label="Tag list">
+                    @if(!empty($tags))
+                        @foreach($tags as $t)
+                            <label class="archive-tag-option" data-tag-text="{{ strtolower($t) }}">
+                                <input type="checkbox" name="tags[]" value="{{ $t }}" {{ in_array($t, $selectedTags ?? [], true) ? 'checked' : '' }}>
+                                <span>{{ $t }}</span>
+                            </label>
+                        @endforeach
+                    @else
+                        <p style="margin: 0; font-size: 0.875rem; color: var(--text-secondary); padding: 0.5rem;">No tags in archive yet.</p>
+                    @endif
+                </div>
+                <div class="archive-tags-dropdown__footer">
+                    <button type="submit" class="btn">Apply</button>
+                </div>
+            </div>
+        </div>
+    </div>
     <div class="archive-toolbar__field">
         <label for="sort">Sort by</label>
         <select name="sort" id="sort" onchange="this.form.submit()">
@@ -194,7 +266,7 @@
 
 @if($items->isEmpty())
     <div class="card">
-        <p>No archive items yet. Run <code>php artisan archive:scrape</code> to import from EggCave.com.</p>
+        <p>No archive items yet.</p>
         <p><a href="https://eggcave.com/archives" target="_blank" rel="noopener">View archives on EggCave.com →</a></p>
     </div>
 @else
@@ -222,4 +294,49 @@
         </div>
     @endif
 @endif
+
+<script>
+(function() {
+    var trigger = document.getElementById('archive-tags-trigger');
+    var panel = document.getElementById('archive-tags-panel');
+    var searchInput = document.getElementById('archive-tags-search');
+    if (!trigger || !panel) return;
+
+    function open() {
+        panel.classList.add('is-open');
+        panel.removeAttribute('hidden');
+        trigger.setAttribute('aria-expanded', 'true');
+        if (searchInput) searchInput.value = '';
+        filterTagOptions('');
+        if (searchInput) searchInput.focus();
+    }
+    function close() {
+        panel.classList.remove('is-open');
+        panel.setAttribute('hidden', '');
+        trigger.setAttribute('aria-expanded', 'false');
+    }
+    function filterTagOptions(q) {
+        var lower = (q || '').toLowerCase().trim();
+        panel.querySelectorAll('.archive-tag-option').forEach(function(label) {
+            var text = (label.getAttribute('data-tag-text') || '').toLowerCase();
+            label.classList.toggle('tag-search-hidden', lower !== '' && text.indexOf(lower) === -1);
+        });
+    }
+
+    trigger.addEventListener('click', function(e) {
+        e.stopPropagation();
+        if (panel.classList.contains('is-open')) close(); else open();
+    });
+    document.addEventListener('click', function() {
+        if (panel.classList.contains('is-open')) close();
+    });
+    panel.addEventListener('click', function(e) { e.stopPropagation(); });
+    panel.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') { close(); trigger.focus(); }
+    });
+    if (searchInput) {
+        searchInput.addEventListener('input', function() { filterTagOptions(this.value); });
+    }
+})();
+</script>
 @endsection

@@ -11,10 +11,10 @@ Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote')->hourly();
 
-// Scrape commands: always run "new only" (no --full) when triggered from dashboard or daily schedule
+// Scrape commands: always run "new only" (no --full) when triggered from admin or daily schedule
 $scrapeCommandOptions = ['--full' => false];
 
-// Helper: run a command and write output to its dashboard log file (so "Last run" on dashboard always shows something)
+// Helper: run a command and write output to its admin log file (so "Last run" on admin always shows something)
 $runJobAndLog = function (string $command, string $trigger = 'scheduled', array $parameters = []): void {
     $logPath = RunJobController::getLogPathForCommand($command);
     if (! $logPath) {
@@ -35,11 +35,11 @@ $runJobAndLog = function (string $command, string $trigger = 'scheduled', array 
     @chmod($logPath, 0644);
 };
 
-// Daily at 12:30 AM: run creature and item scrapers (new only) and write to dashboard logs
+// Daily at 12:30 AM: run creature and item scrapers (new only) and write to admin logs
 Schedule::call(fn () => $runJobAndLog('archive:scrape', 'scheduled', $scrapeCommandOptions))->dailyAt('00:30');
 Schedule::call(fn () => $runJobAndLog('items:scrape', 'scheduled', $scrapeCommandOptions))->dailyAt('00:30');
 
-// Every minute: run any job requested from the dashboard "Run now" button (scrapers run new-only)
+// Every minute: run any job requested from the admin "Run now" button (scrapers run new-only)
 Schedule::call(function () use ($runJobAndLog, $scrapeCommandOptions) {
     $scrapeCommands = ['archive:scrape', 'items:scrape'];
     foreach (RunJobController::getAllowedCommands() as $command) {

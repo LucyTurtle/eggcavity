@@ -15,6 +15,8 @@ class User extends Authenticatable
     public const ROLE_USER = 'user';
     public const ROLE_ADMIN = 'admin';
     public const ROLE_DEVELOPER = 'developer';
+    public const ROLE_CONTENT_MANAGER = 'content_manager';
+    public const ROLE_TRAVEL_SUGGESTOR = 'travel_suggestor';
 
     protected $fillable = [
         'name',
@@ -79,9 +81,33 @@ class User extends Authenticatable
         return $this->role === self::ROLE_ADMIN || $this->isDeveloper();
     }
 
+    public function isContentManager(): bool
+    {
+        return $this->role === self::ROLE_CONTENT_MANAGER;
+    }
+
+    public function isTravelSuggestor(): bool
+    {
+        return $this->role === self::ROLE_TRAVEL_SUGGESTOR;
+    }
+
+    /** Whether this user can access any admin/content area (admin, developer, or sub-admin roles). */
+    public function canAccessContentArea(): bool
+    {
+        return $this->isAdmin()
+            || $this->isContentManager()
+            || $this->isTravelSuggestor();
+    }
+
     public function isUser(): bool
     {
-        return in_array($this->role, [self::ROLE_USER, self::ROLE_ADMIN, self::ROLE_DEVELOPER], true);
+        return in_array($this->role, [
+            self::ROLE_USER,
+            self::ROLE_ADMIN,
+            self::ROLE_DEVELOPER,
+            self::ROLE_CONTENT_MANAGER,
+            self::ROLE_TRAVEL_SUGGESTOR,
+        ], true);
     }
 
     /**
@@ -102,6 +128,12 @@ class User extends Authenticatable
         }
         if ($role === self::ROLE_ADMIN) {
             return $this->isAdmin();
+        }
+        if ($role === self::ROLE_CONTENT_MANAGER) {
+            return $this->isContentManager();
+        }
+        if ($role === self::ROLE_TRAVEL_SUGGESTOR) {
+            return $this->isTravelSuggestor();
         }
         return $this->role === $role;
     }

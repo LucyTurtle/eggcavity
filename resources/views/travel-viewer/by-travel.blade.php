@@ -9,7 +9,7 @@
     <form method="get" action="{{ route('travel-viewer.by-travel') }}" style="margin-top: 0.75rem;">
         <label style="font-size: 0.9375rem; color: var(--text); margin: 0; display: inline-flex; align-items: center; gap: 0.5rem; cursor: pointer;">
             <input type="checkbox" name="available" value="1" {{ $filterAvailable ? 'checked' : '' }} onchange="this.form.submit()">
-            Only show currently available travels (exclude retired &amp; cave cash only)
+            Only show currently available travels
         </label>
     </form>
 </div>

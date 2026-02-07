@@ -26,27 +26,37 @@
 </style>
 
 <div class="content-hub-grid">
+    @if($canManageCreatures)
     <div class="content-hub-card">
         <h3>Creatures</h3>
         <p>Archive creatures and their stages. Add, edit, or remove creatures.</p>
         <a href="{{ route('content.creature.index') }}" class="btn">Manage creatures</a>
     </div>
+    @endif
+    @if($canManageItems)
     <div class="content-hub-card">
         <h3>Items</h3>
         <p>Item catalog (travels, trinkets, etc.). Add, edit, or remove items.</p>
         <a href="{{ route('content.item.index') }}" class="btn">Manage items</a>
     </div>
+    @endif
+    @if($canManageTravelSuggestions)
     <div class="content-hub-card">
         <h3>Travel suggestions</h3>
         <p>Suggest which travel items go with specific creature stages.</p>
         <a href="{{ route('content.travel-suggestions.index') }}" class="btn">Manage travel suggestions</a>
     </div>
+    @endif
+    @if($canManagePendingAi)
     <div class="content-hub-card">
         <h3>Pending image-based suggestions</h3>
-        <p>Approve or reject travel suggestions from the image-match job (run <code>travels:suggest-by-image</code> from the dashboard to generate).</p>
+        <p>Approve or reject travel suggestions from the image-match job (run <code>travels:suggest-by-image</code> from the admin to generate).</p>
         <a href="{{ route('content.pending-ai-travel-suggestions.index') }}" class="btn">Pending travel suggestions</a>
     </div>
+    @endif
 </div>
 
-<p style="margin-top: 1.5rem;"><a href="{{ route('dashboard') }}">← Back to dashboard</a></p>
+@if($canAccessAdmin)
+<p style="margin-top: 1.5rem;"><a href="{{ route('admin') }}">← Back to admin</a></p>
+@endif
 @endsection

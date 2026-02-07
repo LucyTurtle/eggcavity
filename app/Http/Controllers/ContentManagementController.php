@@ -13,7 +13,20 @@ class ContentManagementController extends Controller
 {
     public function index()
     {
-        return redirect()->route('dashboard');
+        $user = auth()->user();
+        $canManageCreatures = $user->isAdmin() || $user->isContentManager();
+        $canManageItems = $user->isAdmin() || $user->isContentManager();
+        $canManageTravelSuggestions = $user->isAdmin() || $user->isTravelSuggestor();
+        $canManagePendingAi = $user->isAdmin() || $user->isTravelSuggestor();
+        $canAccessAdmin = $user->isAdmin();
+
+        return view('content.index', [
+            'canManageCreatures' => $canManageCreatures,
+            'canManageItems' => $canManageItems,
+            'canManageTravelSuggestions' => $canManageTravelSuggestions,
+            'canManagePendingAi' => $canManagePendingAi,
+            'canAccessAdmin' => $canAccessAdmin,
+        ]);
     }
 
     public function indexCreatures()

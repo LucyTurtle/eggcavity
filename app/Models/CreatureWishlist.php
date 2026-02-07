@@ -9,7 +9,13 @@ class CreatureWishlist extends Model
 {
     protected $table = 'creature_wishlists';
 
-    protected $fillable = ['user_id', 'archive_item_id', 'amount', 'gender', 'notes'];
+    protected $fillable = ['user_id', 'archive_item_id', 'amount', 'gender', 'notes', 'stage_number'];
+
+    /** Stage number to use for display (no preference => 1). */
+    public function getDisplayStageNumberAttribute(): int
+    {
+        return $this->stage_number !== null && $this->stage_number >= 1 ? (int) $this->stage_number : 1;
+    }
 
     public const GENDER_MALE = 'male';
     public const GENDER_FEMALE = 'female';

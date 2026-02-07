@@ -11,7 +11,7 @@
 @include('wishlists._wishlist-section-styles')
 
 <div class="wishlist-section">
-    <h2>Travels <a href="{{ route('wishlists.add.travels') }}" class="btn-add">Add to wishlist</a></h2>
+    <h2>Travels ({{ $travelWishlists->count() }}) <a href="{{ route('wishlists.add.travels') }}" class="btn-add">Add to wishlist</a></h2>
     <p style="font-size: 0.8125rem; color: var(--text-secondary); margin: -0.5rem 0 0.75rem 0;">Trinket travels and travel items.</p>
     @if($travelWishlists->isNotEmpty())
         <div class="wishlist-grid">

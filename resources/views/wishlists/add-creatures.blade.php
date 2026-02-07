@@ -104,6 +104,15 @@
                             <input type="number" name="creatures[{{ $c->id }}][amount]" id="creatures-{{ $c->id }}-amount" value="0" min="0" max="9999" aria-label="Amount for {{ $c->title }}">
                         </div>
                         <div class="field">
+                            <label for="creatures-{{ $c->id }}-stage">Stage</label>
+                            <select name="creatures[{{ $c->id }}][stage_number]" id="creatures-{{ $c->id }}-stage">
+                                <option value="" selected>No preference (stage 1)</option>
+                                @for($s = 1; $s <= 20; $s++)
+                                    <option value="{{ $s }}">Stage {{ $s }}</option>
+                                @endfor
+                            </select>
+                        </div>
+                        <div class="field">
                             <label for="creatures-{{ $c->id }}-gender">Gender</label>
                             <select name="creatures[{{ $c->id }}][gender]" id="creatures-{{ $c->id }}-gender">
                                 <option value="no_preference" selected>No preference</option>
@@ -130,6 +139,5 @@
             </div>
         @endif
     </form>
-    <p style="font-size: 0.875rem; color: var(--text-secondary); margin-top: 0.5rem;">You can change pages above without adding anything; use the button when you want to add selected creatures.</p>
 @endif
 @endsection

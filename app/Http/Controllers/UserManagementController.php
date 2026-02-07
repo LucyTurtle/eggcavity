@@ -10,11 +10,24 @@ use Illuminate\Validation\Rule;
 
 class UserManagementController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $users = User::orderBy('name')->paginate(50, ['id', 'name', 'email', 'role', 'banned_at', 'created_at']);
+        $query = User::query()->orderBy('name');
 
-        return view('auth.users.index', ['users' => $users]);
+        $q = $request->input('q');
+        if ($q !== null && trim($q) !== '') {
+            $term = '%' . trim($q) . '%';
+            $query->where(function ($qb) use ($term) {
+                $qb->where('name', 'like', $term)->orWhere('email', 'like', $term);
+            });
+        }
+
+        $users = $query->paginate(20, ['id', 'name', 'email', 'role', 'banned_at', 'created_at'])->withQueryString();
+
+        return view('auth.users.index', [
+            'users' => $users,
+            'search' => $q ?? '',
+        ]);
     }
 
     public function create()
@@ -28,7 +41,7 @@ class UserManagementController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
-            'role' => ['required', 'string', Rule::in([User::ROLE_USER, User::ROLE_ADMIN, User::ROLE_DEVELOPER])],
+            'role' => ['required', 'string', Rule::in([User::ROLE_USER, User::ROLE_ADMIN, User::ROLE_DEVELOPER, User::ROLE_CONTENT_MANAGER, User::ROLE_TRAVEL_SUGGESTOR])],
         ]);
 
         $valid['password'] = Hash::make($valid['password']);
@@ -48,7 +61,7 @@ class UserManagementController extends Controller
         $valid = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user->id)],
-            'role' => ['required', 'string', Rule::in([User::ROLE_USER, User::ROLE_ADMIN, User::ROLE_DEVELOPER])],
+            'role' => ['required', 'string', Rule::in([User::ROLE_USER, User::ROLE_ADMIN, User::ROLE_DEVELOPER, User::ROLE_CONTENT_MANAGER, User::ROLE_TRAVEL_SUGGESTOR])],
         ]);
 
         if ($user->id === Auth::id() && $valid['role'] !== User::ROLE_DEVELOPER) {
@@ -77,7 +90,7 @@ class UserManagementController extends Controller
     public function updateRole(Request $request, User $user)
     {
         $valid = $request->validate([
-            'role' => ['required', 'string', Rule::in([User::ROLE_USER, User::ROLE_ADMIN, User::ROLE_DEVELOPER])],
+            'role' => ['required', 'string', Rule::in([User::ROLE_USER, User::ROLE_ADMIN, User::ROLE_DEVELOPER, User::ROLE_CONTENT_MANAGER, User::ROLE_TRAVEL_SUGGESTOR])],
         ]);
 
         if ($user->id === Auth::id() && $valid['role'] !== User::ROLE_DEVELOPER) {

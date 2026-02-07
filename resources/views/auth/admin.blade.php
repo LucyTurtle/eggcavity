@@ -1,10 +1,10 @@
 @extends('layouts.app')
 
-@section('title', 'Dashboard')
+@section('title', 'Admin')
 
 @section('content')
 <div class="page-header">
-    <h1>Dashboard</h1>
+    <h1>Admin</h1>
     <p class="lead">Admin area. You're signed in as <strong>{{ auth()->user()->name }}</strong> ({{ auth()->user()->role }}).</p>
 </div>
 
@@ -43,18 +43,18 @@
             <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 0.5rem;">
                 <code style="font-size: 0.875rem;">{{ $info['command'] }}</code>
                 <span style="color: var(--text-secondary); font-size: 0.9375rem;">{{ $info['label'] }}</span>
-                <form method="post" action="{{ route('dashboard.run-job') }}" style="display: inline;">
+                <form method="post" action="{{ route('admin.run-job') }}" style="display: inline;">
                     @csrf
                     <input type="hidden" name="command" value="{{ $info['command'] }}">
                     <button type="submit" class="btn" style="padding: 0.35rem 0.75rem; font-size: 0.875rem;">Run now</button>
                 </form>
-                @if($hasLog)
+                @if(!empty($info['last_at']))
                     <span style="font-size: 0.8125rem; color: var(--text-secondary);">
-                        Last run@if($info['last_at']): {{ $info['last_at'] }} ({{ $info['last_trigger'] }})@else: {{ strlen($info['last_log']) }} chars@endif
+                        Last run: {{ $info['last_at'] }} ({{ $info['last_trigger'] ?? 'schedule' }})
                     </span>
                 @endif
             </div>
-            <details style="font-size: 0.875rem;" @if($hasLog) open @endif>
+            <details style="font-size: 0.875rem;">
                 <summary style="cursor: pointer; color: var(--accent);">Last run output</summary>
                 <pre class="job-log-pre" style="margin: 0.5rem 0 0; padding: 0.75rem; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-sm); overflow: auto; max-height: 20rem; font-size: 0.8125rem; white-space: pre-wrap; word-break: break-all;">{{ $info['last_log'] ? e($info['last_log']) : '(No run yet. Click "Run now" or wait for the daily schedule, then refresh this page.)' }}</pre>
             </details>
@@ -110,23 +110,8 @@
 @if(auth()->user()->isDeveloper())
 <div class="card" style="margin-top: 1.5rem;">
     <h3 style="margin: 0 0 0.75rem 0; font-size: 1rem;">User manager</h3>
-    <p style="margin: 0 0 0.75rem 0; font-size: 0.9375rem; color: var(--text-secondary);">Add users, change roles, ban, or reset passwords.</p>
+    <p style="margin: 0 0 0.75rem 0; font-size: 0.9375rem; color: var(--text-secondary);">Add users, change roles, ban, reset passwords, or view the site as any user.</p>
     <p style="margin: 0 0 0.75rem 0;"><a href="{{ route('users.index') }}" class="btn" style="display: inline-block; padding: 0.4rem 0.85rem; background: var(--accent); color: white; text-decoration: none; border-radius: var(--radius-sm); font-weight: 500; font-size: 0.9375rem;">User manager</a></p>
-    @if($users->isNotEmpty())
-    <h4 style="margin: 1rem 0 0.5rem 0; font-size: 0.9375rem;">View as user</h4>
-    <p style="margin: 0 0 0.75rem 0; font-size: 0.9375rem; color: var(--text-secondary);">See the site as any user would. Click to start, then use "End impersonation" in the banner to return.</p>
-    <ul style="margin: 0; padding-left: 1.25rem; list-style: none; padding-left: 0;">
-        @foreach($users as $u)
-            <li style="margin-bottom: 0.5rem;">
-                <form method="post" action="{{ route('impersonate.start', $u) }}" style="display: inline;">
-                    @csrf
-                    <button type="submit" style="background: none; border: none; color: var(--accent); font-weight: 500; font-size: 0.9375rem; cursor: pointer; padding: 0; font-family: inherit;">View as {{ $u->name }}</button>
-                </form>
-                <span style="color: var(--text-secondary); font-size: 0.875rem;"> — {{ $u->email }} ({{ $u->role }})</span>
-            </li>
-        @endforeach
-    </ul>
-    @endif
 </div>
 @endif
 @endsection

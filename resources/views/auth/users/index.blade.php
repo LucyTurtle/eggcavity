@@ -45,9 +45,17 @@
     <div class="card" style="background: #fef2f2; border-color: #dc2626; margin-bottom: 1rem;">{{ session('error') }}</div>
 @endif
 
+<form method="get" action="{{ route('users.index') }}" style="margin-bottom: 1rem; display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem;">
+    <input type="search" name="q" value="{{ old('q', $search) }}" placeholder="Search by name or email…" style="padding: 0.4rem 0.75rem; font-size: 0.9375rem; border: 1px solid var(--border); border-radius: var(--radius-sm); min-width: 12rem;" />
+    <button type="submit" class="btn-sm">Search</button>
+    @if($search !== '')
+        <a href="{{ route('users.index') }}" class="btn-sm">Clear</a>
+    @endif
+</form>
+
 <div style="margin-bottom: 1.5rem; display: flex; flex-wrap: wrap; align-items: center; gap: 1rem;">
     <a href="{{ route('users.create') }}" class="btn-add">Add user</a>
-    <span style="font-size: 0.9375rem; color: var(--text-secondary);">Page {{ $users->currentPage() }} of {{ $users->lastPage() }} ({{ $users->total() }} total)</span>
+    <span style="font-size: 0.9375rem; color: var(--text-secondary);">Page {{ $users->currentPage() }} of {{ $users->lastPage() }} ({{ $users->total() }} {{ Str::plural('user', $users->total()) }})</span>
 </div>
 
 @if($users->isEmpty())
@@ -76,6 +84,8 @@
                                     <option value="user" {{ $u->role === 'user' ? 'selected' : '' }}>user</option>
                                     <option value="admin" {{ $u->role === 'admin' ? 'selected' : '' }}>admin</option>
                                     <option value="developer" {{ $u->role === 'developer' ? 'selected' : '' }}>developer</option>
+                                    <option value="content_manager" {{ $u->role === 'content_manager' ? 'selected' : '' }}>content_manager</option>
+                                    <option value="travel_suggestor" {{ $u->role === 'travel_suggestor' ? 'selected' : '' }}>travel_suggestor</option>
                                 </select>
                             </form>
                         @else
@@ -125,5 +135,5 @@
     @endif
 @endif
 
-<p style="margin-top: 1.5rem;"><a href="{{ route('dashboard') }}">← Back to dashboard</a></p>
+<p style="margin-top: 1.5rem;"><a href="{{ route('admin') }}">← Back to admin</a></p>
 @endsection

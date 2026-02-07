@@ -11,26 +11,23 @@
 @endif
 <div class="page-header">
     <h1>Items</h1>
-    @if($shop || $use_type || $filter_retired || $filter_cavecash)
     <p class="lead">
+        @if(!empty($selectedTags))
+            @php
+                $tagLabels = collect($itemFilterTagOptions ?? [])->keyBy('value');
+            @endphp
+            <span style="font-size: 0.9375rem;">Tags: <strong>{{ implode(', ', array_map(fn($v) => $tagLabels->get($v)['label'] ?? $v, $selectedTags)) }}</strong></span>
+        @endif
+        <span style="font-size: 0.9375rem;">{{ number_format($items->total()) }} {{ Str::plural('item', $items->total()) }}</span>
+        @if($shop || $use_type)
         <span style="font-size: 0.9375rem;">
-            @if($shop)Shop: <strong>{{ $shop }}</strong>
+            @if($shop) · Shop: <strong>{{ $shop }}</strong>
             @endif
-            @if($shop && ($use_type || $filter_retired || $filter_cavecash)) ·
-            @endif
-            @if($use_type)Type: <strong>{{ ucfirst($use_type) }}</strong>
-            @endif
-            @if($use_type && ($filter_retired || $filter_cavecash)) ·
-            @endif
-            @if($filter_retired)Retired only
-            @endif
-            @if($filter_retired && $filter_cavecash) ·
-            @endif
-            @if($filter_cavecash)Cave cash only
+            @if($use_type) · Type: <strong>{{ ucfirst($use_type) }}</strong>
             @endif
         </span>
+        @endif
     </p>
-    @endif
 </div>
 
 <style>
@@ -145,30 +142,58 @@
     .items-pagination ul.pagination span { background: var(--bg); color: var(--text-secondary); }
     .items-pagination ul.pagination li.disabled span { cursor: not-allowed; }
     .items-pagination ul.pagination li.active span { background: var(--accent-muted); border-color: var(--accent); color: var(--accent); }
+    .items-tag-chip { display: inline-flex; align-items: center; gap: 0.2rem; padding: 0.2rem 0.5rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 0.875rem; }
+    .items-tag-chip-remove { color: var(--text-secondary); text-decoration: none; font-size: 1.1rem; line-height: 1; padding: 0 0.15rem; border-radius: 2px; }
+    .items-tag-chip-remove:hover { color: var(--accent); background: var(--bg); }
+    .items-tags-dropdown { position: relative; display: inline-block; }
+    .items-tags-dropdown__trigger {
+        display: inline-flex; align-items: center; gap: 0.35rem;
+        padding: 0.5rem 0.75rem; font-size: 0.9375rem;
+        background: var(--surface); color: var(--text);
+        border: 1px solid var(--border); border-radius: var(--radius-sm);
+        cursor: pointer; font-family: inherit;
+    }
+    .items-tags-dropdown__trigger:hover { border-color: var(--accent); color: var(--accent); }
+    .items-tags-dropdown__trigger[aria-expanded="true"] { border-color: var(--accent); background: var(--accent-muted); color: var(--accent); }
+    .items-tags-dropdown__badge { font-size: 0.75rem; padding: 0.1rem 0.4rem; border-radius: 999px; background: var(--accent); color: white; }
+    .items-tags-dropdown__panel {
+        display: none; position: absolute; top: 100%; left: 0; margin-top: 0.25rem;
+        min-width: 14rem; max-width: 20rem; max-height: min(70vh, 24rem);
+        background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+        box-shadow: var(--shadow-lg); z-index: 50;
+        flex-direction: column;
+    }
+    .items-tags-dropdown__panel.is-open { display: flex; }
+    .items-tags-dropdown__search { padding: 0.5rem 0.75rem; border-bottom: 1px solid var(--border); }
+    .items-tags-dropdown__search input { width: 100%; padding: 0.4rem 0.5rem; font-size: 0.875rem; border: 1px solid var(--border); border-radius: var(--radius-sm); box-sizing: border-box; }
+    .items-tags-dropdown__list { overflow-y: auto; padding: 0.5rem; flex: 1; min-height: 0; }
+    .items-tags-dropdown__list label { display: flex; align-items: center; gap: 0.5rem; padding: 0.35rem 0.5rem; font-size: 0.875rem; cursor: pointer; border-radius: var(--radius-sm); }
+    .items-tags-dropdown__list label:hover { background: var(--accent-muted); }
+    .items-tags-dropdown__list label.tag-search-hidden { display: none; }
+    .items-tags-dropdown__footer { padding: 0.5rem 0.75rem; border-top: 1px solid var(--border); }
+    .items-tags-dropdown__footer .btn { padding: 0.4rem 0.75rem; font-size: 0.875rem; }
 </style>
 
-@if($shop || $use_type || $filter_retired || $filter_cavecash || $filter_available)
+@php
+    $hasItemTags = !empty($selectedTags);
+    $hasItemFilters = $hasItemTags || $shop || $use_type;
+    $itemTagLabels = collect($itemFilterTagOptions ?? [])->keyBy('value');
+@endphp
+@if($hasItemFilters)
     <div class="card" style="border-color: var(--accent); background: var(--accent-muted); margin-bottom: 1rem;">
-        <p style="margin: 0;">
-            @if($shop)
-                Shop: <strong>{{ $shop }}</strong>
+        <p style="margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem;">
+            @if($hasItemTags)
+                <span>Filtering by tags:</span>
+                @foreach($selectedTags as $t)
+                    @php $label = $itemTagLabels->get($t)['label'] ?? $t; @endphp
+                    <span class="items-tag-chip">
+                        <strong>{{ $label }}</strong>
+                        <a href="{{ route('items.index', array_merge(request()->only(['q', 'shop', 'use_type', 'sort', 'dir']), ['tags' => array_values(array_diff($selectedTags, [$t]))])) }}" class="items-tag-chip-remove" aria-label="Remove tag {{ $label }}">×</a>
+                    </span>
+                @endforeach
             @endif
-            @if($use_type)
-                @if($shop) · @endif
-                Type: <strong>{{ ucfirst($use_type) }}</strong>
-            @endif
-            @if($filter_retired)
-                @if($shop || $use_type) · @endif
-                Retired only
-            @endif
-            @if($filter_cavecash)
-                @if($shop || $use_type || $filter_retired) · @endif
-                Cave cash only
-            @endif
-            @if($filter_available)
-                @if($shop || $use_type || $filter_retired || $filter_cavecash) · @endif
-                Available only
-            @endif
+            @if($shop)@if($hasItemTags)<span style="margin-left: 0.25rem;">·</span>@endif Shop: <strong>{{ $shop }}</strong>@endif
+            @if($use_type)@if($hasItemTags || $shop)<span style="margin-left: 0.25rem;">·</span>@endif Type: <strong>{{ ucfirst($use_type) }}</strong>@endif
             <a href="{{ route('items.index', ['sort' => $sort, 'dir' => $dir]) }}" style="margin-left: 0.5rem; color: var(--accent); font-weight: 500;">Clear filters</a>
         </p>
     </div>
@@ -176,26 +201,18 @@
 
 <form method="get" action="{{ route('items.index') }}" class="items-toolbar">
     <input type="search" name="q" value="{{ old('q', $search) }}" placeholder="Search items..." aria-label="Search">
-    @if($shop)<input type="hidden" name="shop" value="{{ $shop }}">
-    @endif
-    @if($use_type)<input type="hidden" name="use_type" value="{{ $use_type }}">
-    @endif
-    @if($filter_retired)<input type="hidden" name="retired" value="1">
-    @endif
-    @if($filter_cavecash)<input type="hidden" name="cavecash" value="1">@endif
-    @if($filter_available ?? false)<input type="hidden" name="available" value="1">@endif
+    @foreach($selectedTags ?? [] as $t)<input type="hidden" name="tags[]" value="{{ $t }}">@endforeach
+    @if($shop ?? null)<input type="hidden" name="shop" value="{{ $shop }}">@endif
+    @if($use_type ?? null)<input type="hidden" name="use_type" value="{{ $use_type }}">@endif
     <input type="hidden" name="sort" value="{{ $sort }}">
     <input type="hidden" name="dir" value="{{ $dir }}">
     <button type="submit">Search</button>
 </form>
 
-<form method="get" action="{{ route('items.index') }}" class="items-toolbar items-toolbar--filters">
+<form method="get" action="{{ route('items.index') }}" class="items-toolbar items-toolbar--filters" id="items-filters-form">
     @if(request('q'))<input type="hidden" name="q" value="{{ request('q') }}">@endif
     @if($shop ?? null)<input type="hidden" name="shop" value="{{ $shop }}">@endif
     @if($use_type ?? null)<input type="hidden" name="use_type" value="{{ $use_type }}">@endif
-    @if($filter_retired ?? false)<input type="hidden" name="retired" value="1">@endif
-    @if($filter_cavecash ?? false)<input type="hidden" name="cavecash" value="1">@endif
-    @if($filter_available ?? false)<input type="hidden" name="available" value="1">@endif
     <div class="items-toolbar__field">
         <label for="shop">Shop</label>
         <select name="shop" id="shop" onchange="this.form.submit()">
@@ -214,14 +231,32 @@
             <option value="other" {{ $use_type === 'other' ? 'selected' : '' }}>Other</option>
         </select>
     </div>
-    <div class="items-toolbar__field items-toolbar__field--checkbox">
-        <label><input type="checkbox" name="retired" value="1" {{ $filter_retired ? 'checked' : '' }} onchange="this.form.submit()"> Retired only</label>
-    </div>
-    <div class="items-toolbar__field items-toolbar__field--checkbox">
-        <label><input type="checkbox" name="cavecash" value="1" {{ $filter_cavecash ? 'checked' : '' }} onchange="this.form.submit()"> Cave cash only</label>
-    </div>
-    <div class="items-toolbar__field items-toolbar__field--checkbox">
-        <label><input type="checkbox" name="available" value="1" {{ $filter_available ? 'checked' : '' }} onchange="this.form.submit()"> Available only</label>
+    <div class="items-toolbar__field items-tags-dropdown-wrap">
+        <label id="items-tags-label">Tags</label>
+        <div class="items-tags-dropdown" id="items-tags-dropdown">
+            <button type="button" class="items-tags-dropdown__trigger" id="items-tags-trigger" aria-haspopup="true" aria-expanded="false" aria-labelledby="items-tags-label">
+                Tags
+                @if(!empty($selectedTags))
+                    <span class="items-tags-dropdown__badge" id="items-tags-badge">{{ count($selectedTags) }}</span>
+                @endif
+            </button>
+            <div class="items-tags-dropdown__panel" id="items-tags-panel" role="dialog" aria-label="Filter by tags" hidden>
+                <div class="items-tags-dropdown__search">
+                    <input type="text" id="items-tags-search" placeholder="Search tags…" autocomplete="off" aria-label="Search tags">
+                </div>
+                <div class="items-tags-dropdown__list" role="group" aria-label="Tag list">
+                    @foreach($itemFilterTagOptions ?? [] as $opt)
+                        <label class="items-tag-option" data-tag-text="{{ strtolower($opt['label']) }}">
+                            <input type="checkbox" name="tags[]" value="{{ $opt['value'] }}" {{ in_array($opt['value'], $selectedTags ?? [], true) ? 'checked' : '' }}>
+                            <span>{{ $opt['label'] }}</span>
+                        </label>
+                    @endforeach
+                </div>
+                <div class="items-tags-dropdown__footer">
+                    <button type="submit" class="btn">Apply</button>
+                </div>
+            </div>
+        </div>
     </div>
     <div class="items-toolbar__field">
         <label for="sort">Sort by</label>
@@ -243,7 +278,7 @@
 
 @if($items->isEmpty())
     <div class="card">
-        <p>No items yet. Run <code>php artisan items:scrape</code> to import from EggCave.com.</p>
+        <p>No items yet.</p>
         <p><a href="https://eggcave.com/items" target="_blank" rel="noopener">View items on EggCave.com →</a></p>
     </div>
 @endif
@@ -270,4 +305,49 @@
         {{ $items->links('pagination::custom') }}
     </div>
 @endif
+
+<script>
+(function() {
+    var trigger = document.getElementById('items-tags-trigger');
+    var panel = document.getElementById('items-tags-panel');
+    var searchInput = document.getElementById('items-tags-search');
+    if (!trigger || !panel) return;
+
+    function open() {
+        panel.classList.add('is-open');
+        panel.removeAttribute('hidden');
+        trigger.setAttribute('aria-expanded', 'true');
+        if (searchInput) searchInput.value = '';
+        filterTagOptions('');
+        if (searchInput) searchInput.focus();
+    }
+    function close() {
+        panel.classList.remove('is-open');
+        panel.setAttribute('hidden', '');
+        trigger.setAttribute('aria-expanded', 'false');
+    }
+    function filterTagOptions(q) {
+        var lower = (q || '').toLowerCase().trim();
+        panel.querySelectorAll('.items-tag-option').forEach(function(label) {
+            var text = (label.getAttribute('data-tag-text') || '').toLowerCase();
+            label.classList.toggle('tag-search-hidden', lower !== '' && text.indexOf(lower) === -1);
+        });
+    }
+
+    trigger.addEventListener('click', function(e) {
+        e.stopPropagation();
+        if (panel.classList.contains('is-open')) close(); else open();
+    });
+    document.addEventListener('click', function() {
+        if (panel.classList.contains('is-open')) close();
+    });
+    panel.addEventListener('click', function(e) { e.stopPropagation(); });
+    panel.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') { close(); trigger.focus(); }
+    });
+    if (searchInput) {
+        searchInput.addEventListener('input', function() { filterTagOptions(this.value); });
+    }
+})();
+</script>
 @endsection

@@ -45,16 +45,15 @@ class ItemsController extends Controller
             }
         }
 
-        if ($request->filled('retired')) {
+        // Filter by tags: retired, cavecash, available (same UI as creature archive tags)
+        $selectedTags = array_values(array_filter((array) $request->input('tags', []), fn ($t) => is_string($t) && $t !== ''));
+        if (in_array('retired', $selectedTags, true)) {
             $query->where('is_retired', true);
         }
-
-        if ($request->filled('cavecash')) {
+        if (in_array('cavecash', $selectedTags, true)) {
             $query->where('is_cavecash', true);
         }
-
-        // Available only: exclude retired (currently obtainable)
-        if ($request->filled('available')) {
+        if (in_array('available', $selectedTags, true)) {
             $query->where('is_retired', false);
         }
 
@@ -86,14 +85,19 @@ class ItemsController extends Controller
             ->pluck('associated_shop')
             ->toArray();
 
+        $itemFilterTagOptions = [
+            ['value' => 'retired', 'label' => 'Retired only'],
+            ['value' => 'cavecash', 'label' => 'Cave cash only'],
+            ['value' => 'available', 'label' => 'Available only'],
+        ];
+
         return view('items.index', [
             'items' => $items,
             'search' => $request->get('q'),
             'shop' => $request->get('shop'),
             'use_type' => $request->get('use_type'),
-            'filter_retired' => $request->filled('retired'),
-            'filter_cavecash' => $request->filled('cavecash'),
-            'filter_available' => $request->filled('available'),
+            'selectedTags' => $selectedTags ?? [],
+            'itemFilterTagOptions' => $itemFilterTagOptions,
             'sort' => $sort,
             'dir' => $dir,
             'shops' => $shops,
@@ -123,7 +127,7 @@ class ItemsController extends Controller
         }
         
         $user = request()->user();
-        $canEdit = $user && ($user->hasRole('admin') || $user->hasRole('developer'));
+        $canEdit = $user && ($user->hasRole('admin') || $user->hasRole('developer') || $user->hasRole('content_manager'));
 
         return view('items.show', [
             'item' => $item,

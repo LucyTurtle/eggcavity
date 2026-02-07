@@ -20,8 +20,4 @@
         <li><a href="{{ route('login') }}">Wishlists</a> — Sign in to manage and share your creature, item, and travel wishlists.</li>
     </ul>
 </div>
-
-<div class="card">
-    <p><a href="https://eggcave.com" target="_blank" rel="noopener">EggCave.com</a> — play and adopt.</p>
-</div>
 @endsection

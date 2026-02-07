@@ -19,7 +19,7 @@ class WishlistController extends Controller
     {
         $user = Auth::user();
 
-        $creatureWishlists = $user->creatureWishlists()->with('archiveItem')->orderBy('created_at', 'desc')->get();
+        $creatureWishlists = $user->creatureWishlists()->with('archiveItem.stages')->orderBy('created_at', 'desc')->get();
         $itemWishlists = $user->itemWishlists()->with('item')->orderBy('created_at', 'desc')->get();
         $travelWishlists = $user->travelWishlists()->with('item')->orderBy('created_at', 'desc')->get();
 
@@ -37,7 +37,7 @@ class WishlistController extends Controller
     public function showCreatures()
     {
         $user = Auth::user();
-        $creatureWishlists = $user->creatureWishlists()->with('archiveItem')->orderBy('created_at', 'desc')->get();
+        $creatureWishlists = $user->creatureWishlists()->with('archiveItem.stages')->orderBy('created_at', 'desc')->get();
         return view('wishlists.creatures', [
             'creatureWishlists' => $creatureWishlists,
             'shareCreaturesUrl' => $user->wishlist_share_creatures_url,
@@ -84,7 +84,7 @@ class WishlistController extends Controller
     public function showShared(string $slug)
     {
         $owner = $this->findOwnerBySlug($slug);
-        $creatureWishlists = $owner->creatureWishlists()->with('archiveItem')->orderBy('created_at', 'desc')->get();
+        $creatureWishlists = $owner->creatureWishlists()->with('archiveItem.stages')->orderBy('created_at', 'desc')->get();
         $itemWishlists = $owner->itemWishlists()->with('item')->orderBy('created_at', 'desc')->get();
         $travelWishlists = $owner->travelWishlists()->with('item')->orderBy('created_at', 'desc')->get();
 
@@ -99,7 +99,7 @@ class WishlistController extends Controller
     public function showSharedCreatures(string $slug)
     {
         $owner = $this->findOwnerBySlug($slug);
-        $creatureWishlists = $owner->creatureWishlists()->with('archiveItem')->orderBy('created_at', 'desc')->get();
+        $creatureWishlists = $owner->creatureWishlists()->with('archiveItem.stages')->orderBy('created_at', 'desc')->get();
 
         return view('wishlists.shared-creatures', [
             'owner' => $owner,
@@ -177,12 +177,16 @@ class WishlistController extends Controller
             if (! ArchiveItem::where('id', $archiveItemId)->exists()) {
                 continue;
             }
+            $stageNumber = isset($data['stage_number']) && $data['stage_number'] !== '' && $data['stage_number'] !== '0'
+                ? min(max((int) $data['stage_number'], 1), 20)
+                : null;
             $user->creatureWishlists()->updateOrCreate(
                 ['archive_item_id' => $archiveItemId],
                 [
                     'amount' => min(max($amount, 1), 9999),
                     'gender' => isset($data['gender']) && in_array($data['gender'], ['male', 'female', 'non-binary', 'no_preference'], true) ? $data['gender'] : 'no_preference',
                     'notes' => isset($data['notes']) ? mb_substr($data['notes'], 0, 2000) : null,
+                    'stage_number' => $stageNumber,
                 ]
             );
             $added++;
@@ -263,8 +267,10 @@ class WishlistController extends Controller
             'amount' => ['nullable', 'integer', 'min:1', 'max:9999'],
             'gender' => ['nullable', Rule::in(['male', 'female', 'non-binary', 'no_preference'])],
             'notes' => ['nullable', 'string', 'max:2000'],
+            'stage_number' => ['nullable', 'integer', 'min:0', 'max:20'],
         ]);
 
+        $stageNumber = isset($valid['stage_number']) && $valid['stage_number'] >= 1 ? (int) $valid['stage_number'] : null;
         $user = Auth::user();
         $user->creatureWishlists()->updateOrCreate(
             ['archive_item_id' => $valid['archive_item_id']],
@@ -272,6 +278,7 @@ class WishlistController extends Controller
                 'amount' => $valid['amount'] ?? 1,
                 'gender' => $valid['gender'] ?? 'no_preference',
                 'notes' => $valid['notes'] ?? null,
+                'stage_number' => $stageNumber,
             ]
         );
 
@@ -352,11 +359,14 @@ class WishlistController extends Controller
             'amount' => ['nullable', 'integer', 'min:1', 'max:9999'],
             'gender' => ['nullable', Rule::in(['male', 'female', 'non-binary', 'no_preference'])],
             'notes' => ['nullable', 'string', 'max:2000'],
+            'stage_number' => ['nullable', 'integer', 'min:0', 'max:20'],
         ]);
+        $stageNumber = isset($valid['stage_number']) && $valid['stage_number'] >= 1 ? (int) $valid['stage_number'] : null;
         $creatureWishlist->update([
             'amount' => $valid['amount'] ?? 1,
             'gender' => $valid['gender'] ?? 'no_preference',
             'notes' => $valid['notes'] ?? null,
+            'stage_number' => $stageNumber,
         ]);
         return back()->with('success', 'Creature wishlist entry updated.');
     }
