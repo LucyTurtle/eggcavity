@@ -56,11 +56,16 @@
             @foreach($creatureWishlists as $entry)
                 @php($creature = $entry->archiveItem)
                 @if($creature)
+                    @php
+                        $stageNum = $entry->display_stage_number;
+                        $stage = $creature->stages->firstWhere('stage_number', $stageNum) ?? $creature->stages->first();
+                        $thumbUrl = $stage ? $stage->image_url : $creature->thumbnail_url;
+                    @endphp
                     <article class="wishlist-card">
                         <a href="{{ route('archive.show', $creature->slug) }}">
                             <div class="thumb">
-                                @if($creature->thumbnail_url)
-                                    <img src="{{ $creature->thumbnail_url }}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='inline';">
+                                @if($thumbUrl)
+                                    <img src="{{ $thumbUrl }}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='inline';">
                                     <span class="fallback" style="display: none;" aria-hidden="true">?</span>
                                 @else
                                     <span class="fallback" aria-hidden="true">?</span>
@@ -68,13 +73,20 @@
                             </div>
                             <div class="label">{{ $creature->title }}</div>
                         </a>
-                        <div class="meta">Qty: {{ $entry->amount }}@if($entry->gender) · {{ ucfirst(str_replace('_', ' ', $entry->gender)) }}@endif</div>
-                        @if($entry->notes)<div class="notes" title="{{ $entry->notes }}">{{ $entry->notes }}</div>@endif
+                        <div class="meta">
+                            Qty: {{ $entry->amount }}
+                            @if($entry->gender)<br>{{ ucfirst(str_replace('_', ' ', $entry->gender)) }}@endif
+                            @if($entry->stage_number)<br>Stage {{ $entry->stage_number }}@endif
+                        </div>
+                        @if($entry->notes)
+                        <div class="notes" title="{{ $entry->notes }}">{{ $entry->notes }}</div>
+                        @endif
                     </article>
                 @endif
             @endforeach
         </div>
-    @else
+    @endif
+    @if($creatureWishlists->isEmpty())
         <p class="wishlist-empty">No creatures on this wishlist.</p>
     @endif
 </div>
