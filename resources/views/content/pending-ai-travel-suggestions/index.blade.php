@@ -55,7 +55,7 @@
                 <thead>
                     <tr>
                         <th>#</th>
-                        <th>Preview — all stages (creature on top + travel)</th>
+                        <th>Preview</th>
                         <th>Travel</th>
                         <th style="width: 14rem;">Actions</th>
                     </tr>
