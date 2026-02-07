@@ -6,6 +6,11 @@
 <div class="card" style="max-width: 400px; margin-bottom: 1rem; border-color: #dc2626; background: #fef2f2;">
     <p style="margin: 0; color: #b91c1c; font-weight: 600;">All previous data was lost. You will need to create a new account.</p>
 </div>
+@if (session('status'))
+    <div class="card" style="max-width: 400px; margin-bottom: 1rem; border-color: var(--accent); background: var(--accent-muted);">
+        <p style="margin: 0; font-weight: 500;">{{ session('status') }}</p>
+    </div>
+@endif
 @if(request('from') === 'wishlist')
     <div class="card" style="max-width: 400px; margin-bottom: 1rem; border-color: var(--accent); background: var(--accent-muted);">
         <p style="margin: 0; font-weight: 500;">Please log in to use the wishlist.</p>
@@ -34,6 +39,9 @@
             @error('password')
                 <p style="color: #dc2626; font-size: 0.875rem; margin: 0.25rem 0 0 0;">{{ $message }}</p>
             @enderror
+            <p style="margin: 0.25rem 0 0 0; font-size: 0.875rem;">
+                <a href="{{ route('password.request') }}" style="color: var(--accent); font-weight: 500;">Forgot your password?</a>
+            </p>
         </div>
         <div style="margin-bottom: 1rem;">
             <label style="display: inline-flex; align-items: center; gap: 0.5rem; font-size: 0.9375rem;">

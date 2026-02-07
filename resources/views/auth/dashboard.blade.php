@@ -35,7 +35,8 @@
 
 <div class="card" style="margin-bottom: 1.5rem;">
     <h2 style="font-size: 1.25rem; margin: 0 0 0.25rem 0;">Run jobs manually</h2>
-    <p class="lead" style="margin: 0 0 1rem 0; font-size: 0.9375rem;">Schedule a job to run in the backend (not in the browser). It runs on the next scheduler tick, usually within a minute. Archive and items scrapers run in <strong>new only</strong> mode (only creatures/items not already in the DB). Results appear below; refresh the page after the job runs to see the latest.</p>
+    <p class="lead" style="margin: 0 0 0.5rem 0; font-size: 0.9375rem;">Schedule a job to run in the backend (not in the browser). It runs on the next scheduler tick, usually within a minute. Archive and items scrapers run in <strong>new only</strong> mode (only creatures/items not already in the DB). Results appear below; refresh the page after the job runs to see the latest.</p>
+    <p style="margin: 0 0 1rem 0; font-size: 0.875rem; color: var(--text-secondary);">Logs below are from the <strong>most recent run</strong> of each job—whether that run was triggered by "Run now" or by the <strong>daily schedule</strong> (00:30). Automatic runs use the same log files, so you can see scraper output after the nightly run by refreshing this page.</p>
     @foreach($jobLogs as $info)
         @php $hasLog = !empty(trim($info['last_log'])); @endphp
         <div class="manual-job-block" style="margin-bottom: 1.25rem; padding-bottom: 1.25rem; border-bottom: 1px solid var(--border);">
@@ -48,12 +49,14 @@
                     <button type="submit" class="btn" style="padding: 0.35rem 0.75rem; font-size: 0.875rem;">Run now</button>
                 </form>
                 @if($hasLog)
-                    <span style="font-size: 0.8125rem; color: var(--text-secondary);">Last run: {{ strlen($info['last_log']) }} chars</span>
+                    <span style="font-size: 0.8125rem; color: var(--text-secondary);">
+                        Last run@if($info['last_at']): {{ $info['last_at'] }} ({{ $info['last_trigger'] }})@else: {{ strlen($info['last_log']) }} chars@endif
+                    </span>
                 @endif
             </div>
             <details style="font-size: 0.875rem;" @if($hasLog) open @endif>
                 <summary style="cursor: pointer; color: var(--accent);">Last run output</summary>
-                <pre class="job-log-pre" style="margin: 0.5rem 0 0; padding: 0.75rem; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-sm); overflow: auto; max-height: 20rem; font-size: 0.8125rem; white-space: pre-wrap; word-break: break-all;">{{ $info['last_log'] ? e($info['last_log']) : '(No run yet. Click "Run now" then refresh this page in a minute.)' }}</pre>
+                <pre class="job-log-pre" style="margin: 0.5rem 0 0; padding: 0.75rem; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-sm); overflow: auto; max-height: 20rem; font-size: 0.8125rem; white-space: pre-wrap; word-break: break-all;">{{ $info['last_log'] ? e($info['last_log']) : '(No run yet. Click "Run now" or wait for the daily schedule, then refresh this page.)' }}</pre>
             </details>
         </div>
     @endforeach

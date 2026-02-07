@@ -54,7 +54,24 @@ class RunJobController extends Controller
     }
 
     /**
-     * @return array<string, array{command: string, label: string, log_file: string, last_log: string}>
+     * Parse the first line "Started at Y-m-d H:i:s (scheduled)" or "(run now)" to get trigger and time.
+     *
+     * @return array{trigger: string, at: string|null}
+     */
+    public static function parseLastRunFromLog(string $logContent): array
+    {
+        $trigger = 'unknown';
+        $at = null;
+        $firstLine = trim(explode("\n", $logContent)[0] ?? '');
+        if (preg_match('/^Started at (.+?) \((scheduled|run now)\)\s*$/', $firstLine, $m)) {
+            $at = trim($m[1]);
+            $trigger = $m[2];
+        }
+        return ['trigger' => $trigger, 'at' => $at];
+    }
+
+    /**
+     * @return array<string, array{command: string, label: string, log_file: string, last_log: string, last_trigger: string, last_at: string|null}>
      */
     public static function getJobLogs(): array
     {
@@ -69,11 +86,14 @@ class RunJobController extends Controller
                     $lastLog = '(Could not read log file. If jobs run from cron as root, make storage/logs readable by the web server: chmod -R 755 storage/logs or run cron as the web user.)';
                 }
             }
+            $parsed = self::parseLastRunFromLog($lastLog);
             $out[$command] = [
                 'command' => $command,
                 'label' => $config['label'],
                 'log_file' => $config['log_file'],
                 'last_log' => $lastLog,
+                'last_trigger' => $parsed['trigger'],
+                'last_at' => $parsed['at'],
             ];
         }
         return $out;
