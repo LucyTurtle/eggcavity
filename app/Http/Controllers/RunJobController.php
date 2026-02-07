@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\File;
@@ -71,7 +72,7 @@ class RunJobController extends Controller
     }
 
     /**
-     * @return array<string, array{command: string, label: string, log_file: string, last_log: string, last_trigger: string, last_at: string|null}>
+     * @return array<string, array{command: string, label: string, log_file: string, last_log: string, last_trigger: string, last_at: string|null, last_at_eggcave: string|null}>
      */
     public static function getJobLogs(): array
     {
@@ -87,6 +88,16 @@ class RunJobController extends Controller
                 }
             }
             $parsed = self::parseLastRunFromLog($lastLog);
+            $lastAtEggcave = null;
+            if (! empty($parsed['at'])) {
+                try {
+                    $dt = Carbon::parse($parsed['at'], config('app.timezone'));
+                    $lastAtEggcave = $dt->setTimezone(config('app.eggcave_timezone'))
+                        ->format('M j, Y \a\t g:i A') . ' EggCave time';
+                } catch (\Throwable) {
+                    $lastAtEggcave = $parsed['at'];
+                }
+            }
             $out[$command] = [
                 'command' => $command,
                 'label' => $config['label'],
@@ -94,6 +105,7 @@ class RunJobController extends Controller
                 'last_log' => $lastLog,
                 'last_trigger' => $parsed['trigger'],
                 'last_at' => $parsed['at'],
+                'last_at_eggcave' => $lastAtEggcave,
             ];
         }
         return $out;
