@@ -81,9 +81,16 @@ class ImageMatchService
 
     /**
      * Download image and compute dominant HSV. No cache.
+     * Requires the PHP GD extension (e.g. apt install php8.2-gd or php-gd).
      */
     private function fetchAndComputeHsv(string $imageUrl): ?array
     {
+        if (! \function_exists('imagecreatefromstring')) {
+            throw new \RuntimeException(
+                'The PHP GD extension is required for the image-match job. Install it (e.g. apt install php-gd or php8.2-gd) and restart PHP or the web server.'
+            );
+        }
+
         try {
             $response = Http::timeout(15)->get($imageUrl);
             if (! $response->successful()) {
