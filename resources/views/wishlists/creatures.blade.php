@@ -11,17 +11,24 @@
 @include('wishlists._wishlist-section-styles')
 
 <div class="wishlist-section">
-    <h2>Creatures <a href="{{ route('wishlists.add.creatures') }}" class="btn-add">Add to wishlist</a></h2>
+    <h2>Creatures ({{ $creatureWishlists->count() }}) <a href="{{ route('wishlists.add.creatures') }}" class="btn-add">Add to wishlist</a></h2>
     @if($creatureWishlists->isNotEmpty())
         <div class="wishlist-grid">
             @foreach($creatureWishlists as $entry)
-                @php($creature = $entry->archiveItem)
-                @if($creature)
-                    <article class="wishlist-card" data-entry-id="{{ $entry->id }}">
+                @php
+                    $creature = $entry->archiveItem;
+                    if (!$creature) {
+                        continue;
+                    }
+                    $stageNum = $entry->display_stage_number;
+                    $stage = $creature->stages->firstWhere('stage_number', $stageNum) ?? $creature->stages->first();
+                    $thumbUrl = $stage ? $stage->image_url : $creature->thumbnail_url;
+                @endphp
+                <article class="wishlist-card" data-entry-id="{{ $entry->id }}">
                         <a href="{{ route('archive.show', $creature->slug) }}">
                             <div class="thumb">
-                                @if($creature->thumbnail_url)
-                                    <img src="{{ $creature->thumbnail_url }}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='inline';">
+                                @if($thumbUrl)
+                                    <img src="{{ $thumbUrl }}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='inline';">
                                     <span class="fallback" style="display: none;" aria-hidden="true">?</span>
                                 @else
                                     <span class="fallback" aria-hidden="true">?</span>
@@ -29,8 +36,12 @@
                             </div>
                             <div class="label">{{ $creature->title }}</div>
                         </a>
-                        <div class="meta">Qty: {{ $entry->amount }}@if($entry->gender) · {{ ucfirst(str_replace('_', ' ', $entry->gender)) }}@endif</div>
-                        @if($entry->notes)<div class="notes" title="{{ $entry->notes }}">{{ $entry->notes }}</div>@endif
+                        <div class="meta">
+                            Qty: {{ $entry->amount }}
+                            @if($entry->gender)<br>{{ ucfirst(str_replace('_', ' ', $entry->gender)) }}@endif
+                            @if($entry->stage_number)<br>Stage {{ $entry->stage_number }}@endif
+                        </div>
+                        {!! $entry->notes ? '<div class="notes" title="' . e($entry->notes) . '">' . e($entry->notes) . '</div>' : '' !!}
                         <div class="actions">
                             <button type="button" class="btn-sm toggle-edit">Edit</button>
                             <form method="post" action="{{ route('wishlist.creature.remove', $entry) }}" style="display: inline;" onsubmit="return confirm('Remove from wishlist?');">
@@ -46,6 +57,15 @@
                                 <div class="form-row">
                                     <label>Amount</label>
                                     <input type="number" name="amount" value="{{ $entry->amount }}" min="1" max="9999">
+                                </div>
+                                <div class="form-row">
+                                    <label>Stage</label>
+                                    <select name="stage_number">
+                                        <option value="" {{ ($entry->stage_number ?? null) === null ? 'selected' : '' }}>No preference (stage 1)</option>
+                                        @for($s = 1; $s <= 20; $s++)
+                                            <option value="{{ $s }}" {{ (int)($entry->stage_number ?? 0) === $s ? 'selected' : '' }}>Stage {{ $s }}</option>
+                                        @endfor
+                                    </select>
                                 </div>
                                 <div class="form-row">
                                     <label>Gender</label>
@@ -64,11 +84,11 @@
                                 <button type="submit" class="btn-sm" style="margin-top: 0.35rem;">Save</button>
                             </form>
                         </div>
-                    </article>
-                @endif
+                </article>
             @endforeach
         </div>
-    @else
+    @endif
+    @if($creatureWishlists->isEmpty())
         <p class="wishlist-empty">No creatures on your wishlist. <a href="{{ route('wishlists.add.creatures') }}">Add some</a>.</p>
     @endif
 </div>
