@@ -69,6 +69,36 @@ For the site to work over HTTPS:
 
    The app trusts proxy headers and forces HTTPS when `APP_URL` starts with `https://`.
 
+## Mail (password reset, etc.)
+
+By default Laravel uses the **log** mail driver: emails are written to `storage/logs/` and not sent. To actually send password reset and other emails, configure a real mail driver in `.env`.
+
+### Free options
+
+- **[Brevo](https://www.brevo.com/)** (formerly Sendinblue) — **300 emails/day free**. Sign up, then: SMTP & API → SMTP → create an SMTP key. Use the server and login they give you.
+- **[Resend](https://resend.com)** — **3,000 emails/month free**. Sign up, get an API key; use their Laravel SMTP details or the `resend` Laravel package.
+- **Gmail** — Use a Gmail address and an [App Password](https://support.google.com/accounts/answer/185833). Free but limited (e.g. 500/day) and not ideal for production.
+
+### Example: Brevo (SMTP, no extra packages)
+
+Add to your server `.env` (use your own Brevo SMTP login and from address):
+
+```env
+MAIL_MAILER=smtp
+MAIL_HOST=smtp-relay.brevo.com
+MAIL_PORT=587
+MAIL_USERNAME=a1d47c001@smtp-brevo.com
+MAIL_PASSWORD=YOUR_BREVO_SMTP_KEY
+MAIL_ENCRYPTION=tls
+MAIL_FROM_ADDRESS="noreply@eggcavity.com"
+MAIL_FROM_NAME="Eggcavity"
+```
+
+- In Brevo, the “SMTP login” is usually your account email; the “SMTP key” is the password you create under SMTP & API.
+- `MAIL_FROM_ADDRESS` should be a sender you’ve verified in Brevo (or use the address they allow on the free tier).
+- After editing `.env`, restart PHP-FPM:  
+  `sudo systemctl restart php8.3-fpm`
+
 ## Production: SQLite permissions
 
 If you see **"attempt to write a readonly database"** (e.g. when registering or logging in), the PHP process user (e.g. `www-data`, `nginx`) cannot write to the SQLite file or its directory.
@@ -110,6 +140,8 @@ If you see **"attempt to write a readonly database"** (e.g. when registering or 
    php artisan migrate
    sudo chown -R www-data:www-data database storage bootstrap/cache
    ```
+
+If you see **"The stream or file ... storage/logs/... could not be opened in append mode: Permission denied"** (e.g. on password reset), the web server user cannot write to `storage/logs`. Fix with the same `chown`/`chmod` as above so `storage` (including `storage/logs`) is owned and writable by the PHP/web user.
 
 ## Optional: MySQL
 
@@ -192,6 +224,25 @@ Suggest travels per creature using **free local image color analysis** (no API k
 ## License
 
 MIT.
+
+---
+
+## Mail (Brevo) — add to server `.env`
+
+To send password reset and other emails from **do-not-reply@eggcavity.com** via Brevo, add this to `/var/www/eggcave-fan-site/.env`. Paste your Brevo SMTP key (from Brevo → SMTP & API → SMTP) as `MAIL_PASSWORD`; no quotes needed.
+
+```env
+MAIL_MAILER=smtp
+MAIL_HOST=smtp-relay.brevo.com
+MAIL_PORT=587
+MAIL_USERNAME=a1d47c001@smtp-brevo.com
+MAIL_PASSWORD=your_brevo_smtp_key_here
+MAIL_ENCRYPTION=tls
+MAIL_FROM_ADDRESS="do-not-reply@eggcavity.com"
+MAIL_FROM_NAME="Eggcavity"
+```
+
+Then restart PHP-FPM: `sudo systemctl restart php8.3-fpm`
 
 ---
 
