@@ -137,7 +137,7 @@ class ArchiveController extends Controller
 
     public function show(string $slug)
     {
-        $item = ArchiveItem::where('slug', $slug)->with(['images', 'stages.travelSuggestions.item'])->firstOrFail();
+        $item = ArchiveItem::where('slug', $slug)->with(['images', 'stages', 'travelSuggestions.item'])->firstOrFail();
         [$trinketTravels, $recommendedTravels] = $this->computeRecommendedTravels($item);
 
         $user = request()->user();
@@ -157,7 +157,7 @@ class ArchiveController extends Controller
      */
     public function applyRecommendedToAllStages(Request $request, string $slug)
     {
-        $item = ArchiveItem::where('slug', $slug)->with(['stages.travelSuggestions.item'])->firstOrFail();
+        $item = ArchiveItem::where('slug', $slug)->with(['travelSuggestions.item'])->firstOrFail();
         [$trinketTravels, $recommendedTravels] = $this->computeRecommendedTravels($item);
 
         $travelIds = $request->input('travel_ids', []);
@@ -181,15 +181,13 @@ class ArchiveController extends Controller
             }
         }
 
-        foreach ($item->stages as $stage) {
-            $stage->travelSuggestions()->delete();
-            foreach ($allowedInOrder as $sortOrder => $itemId) {
-                TravelSuggestion::create([
-                    'archive_stage_id' => $stage->id,
-                    'item_id' => $itemId,
-                    'sort_order' => $sortOrder,
-                ]);
-            }
+        $item->travelSuggestions()->delete();
+        foreach ($allowedInOrder as $sortOrder => $itemId) {
+            TravelSuggestion::create([
+                'archive_item_id' => $item->id,
+                'item_id' => $itemId,
+                'sort_order' => $sortOrder,
+            ]);
         }
 
         if ($request->expectsJson()) {
@@ -199,6 +197,8 @@ class ArchiveController extends Controller
     }
 
     /**
+     * Trinkets: items named "{Creature} Stage {N}" show on that stage. Other suggestions are per-creature.
+     *
      * @return array{0: array<int, \App\Models\Item>, 1: list<\App\Models\Item>}
      */
     private function computeRecommendedTravels(ArchiveItem $item): array
@@ -215,16 +215,16 @@ class ArchiveController extends Controller
 
             if ($trinketItem) {
                 $trinketTravels[$stage->id] = $trinketItem;
-                if (!isset($recommendedTravels[$trinketItem->slug])) {
+                if (! isset($recommendedTravels[$trinketItem->slug])) {
                     $recommendedTravels[$trinketItem->slug] = $trinketItem;
                 }
             }
+        }
 
-            foreach ($stage->travelSuggestions as $suggestion) {
-                $suggestedTravel = $suggestion->item;
-                if ($suggestedTravel && !isset($recommendedTravels[$suggestedTravel->slug])) {
-                    $recommendedTravels[$suggestedTravel->slug] = $suggestedTravel;
-                }
+        foreach ($item->travelSuggestions as $suggestion) {
+            $suggestedTravel = $suggestion->item;
+            if ($suggestedTravel && ! isset($recommendedTravels[$suggestedTravel->slug])) {
+                $recommendedTravels[$suggestedTravel->slug] = $suggestedTravel;
             }
         }
 

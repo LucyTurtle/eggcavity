@@ -171,7 +171,7 @@ Options: run the scraper from a machine with a residential IP (e.g. a home serve
 - **00:30 daily** — `archive:scrape` and `items:scrape` (creature and item data; "new only").
 - **Every minute** — Any job queued from Dashboard → "Run now" (runs within about a minute).
 
-## AI travel suggestions (optional)
+## Travel suggestions (image-based, optional)
 
 Suggest travels per creature using **free local image color analysis** (no API key). Run **Dashboard → Run jobs manually → Suggest travels (image match)**. Approve or reject from **Dashboard → Manage content → Pending travel suggestions**.
 

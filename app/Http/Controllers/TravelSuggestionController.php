@@ -3,18 +3,16 @@
 namespace App\Http\Controllers;
 
 use App\Models\ArchiveItem;
-use App\Models\ArchiveStage;
 use App\Models\Item;
 use App\Models\TravelSuggestion;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
 
 class TravelSuggestionController extends Controller
 {
     public function index()
     {
-        $suggestions = TravelSuggestion::with(['archiveStage.archiveItem', 'item'])
-            ->orderBy('archive_stage_id')
+        $suggestions = TravelSuggestion::with(['archiveItem', 'item'])
+            ->orderBy('archive_item_id')
             ->orderBy('sort_order')
             ->paginate(100);
 
@@ -25,7 +23,7 @@ class TravelSuggestionController extends Controller
 
     public function create()
     {
-        $creatures = ArchiveItem::with('stages')->orderBy('title')->get();
+        $creatures = ArchiveItem::orderBy('title')->get(['id', 'title', 'slug']);
         $travels = Item::whereRaw('LOWER(use) = ?', ['travel'])->orderBy('name')->get(['id', 'name', 'slug']);
 
         return view('content.travel-suggestions.create', [
@@ -37,29 +35,27 @@ class TravelSuggestionController extends Controller
     public function store(Request $request)
     {
         $valid = $request->validate([
-            'archive_stage_id' => ['required', 'exists:archive_stages,id'],
+            'archive_item_id' => ['required', 'exists:archive_items,id'],
             'item_id' => ['required', 'exists:items,id'],
             'notes' => ['nullable', 'string', 'max:1000'],
             'sort_order' => ['nullable', 'integer', 'min:0'],
         ], [], [
-            'archive_stage_id' => 'creature stage',
+            'archive_item_id' => 'creature',
             'item_id' => 'travel',
         ]);
 
-        // Check if suggestion already exists
-        $exists = TravelSuggestion::where('archive_stage_id', $valid['archive_stage_id'])
+        $exists = TravelSuggestion::where('archive_item_id', $valid['archive_item_id'])
             ->where('item_id', $valid['item_id'])
             ->exists();
 
         if ($exists) {
             return redirect()->back()
                 ->withInput()
-                ->withErrors(['item_id' => 'This travel is already suggested for this stage.']);
+                ->withErrors(['item_id' => 'This travel is already suggested for this creature.']);
         }
 
-        // Verify item is a travel
         $item = Item::findOrFail($valid['item_id']);
-        if (!$item->isTravel()) {
+        if (! $item->isTravel()) {
             return redirect()->back()
                 ->withInput()
                 ->withErrors(['item_id' => 'Selected item must be a travel item.']);
@@ -74,11 +70,11 @@ class TravelSuggestionController extends Controller
 
     public function edit(TravelSuggestion $travelSuggestion)
     {
-        $creatures = ArchiveItem::with('stages')->orderBy('title')->get();
+        $creatures = ArchiveItem::orderBy('title')->get(['id', 'title', 'slug']);
         $travels = Item::whereRaw('LOWER(use) = ?', ['travel'])->orderBy('name')->get(['id', 'name', 'slug']);
 
         return view('content.travel-suggestions.edit', [
-            'suggestion' => $travelSuggestion->load(['archiveStage.archiveItem', 'item']),
+            'suggestion' => $travelSuggestion->load(['archiveItem', 'item']),
             'creatures' => $creatures,
             'travels' => $travels,
         ]);
@@ -87,17 +83,16 @@ class TravelSuggestionController extends Controller
     public function update(Request $request, TravelSuggestion $travelSuggestion)
     {
         $valid = $request->validate([
-            'archive_stage_id' => ['required', 'exists:archive_stages,id'],
+            'archive_item_id' => ['required', 'exists:archive_items,id'],
             'item_id' => ['required', 'exists:items,id'],
             'notes' => ['nullable', 'string', 'max:1000'],
             'sort_order' => ['nullable', 'integer', 'min:0'],
         ], [], [
-            'archive_stage_id' => 'creature stage',
+            'archive_item_id' => 'creature',
             'item_id' => 'travel',
         ]);
 
-        // Check if suggestion already exists (excluding current)
-        $exists = TravelSuggestion::where('archive_stage_id', $valid['archive_stage_id'])
+        $exists = TravelSuggestion::where('archive_item_id', $valid['archive_item_id'])
             ->where('item_id', $valid['item_id'])
             ->where('id', '!=', $travelSuggestion->id)
             ->exists();
@@ -105,12 +100,11 @@ class TravelSuggestionController extends Controller
         if ($exists) {
             return redirect()->back()
                 ->withInput()
-                ->withErrors(['item_id' => 'This travel is already suggested for this stage.']);
+                ->withErrors(['item_id' => 'This travel is already suggested for this creature.']);
         }
 
-        // Verify item is a travel
         $item = Item::findOrFail($valid['item_id']);
-        if (!$item->isTravel()) {
+        if (! $item->isTravel()) {
             return redirect()->back()
                 ->withInput()
                 ->withErrors(['item_id' => 'Selected item must be a travel item.']);

@@ -127,7 +127,7 @@
     <div class="content-hub-card">
         <h3>Approve image-based suggestions</h3>
         <p>Review and approve or reject travel suggestions from the image-match job before they go live.</p>
-        <a href="{{ route('content.pending-ai-travel-suggestions.index') }}" class="btn">Approve / reject suggestions</a>
+        <a href="{{ route('content.pending-travel-suggestions.index') }}" class="btn">Approve / reject suggestions</a>
     </div>
     @endif
 </div>

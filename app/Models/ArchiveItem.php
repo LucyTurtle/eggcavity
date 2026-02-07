@@ -52,9 +52,14 @@ class ArchiveItem extends Model
         return $this->hasMany(CreatureWishlist::class, 'archive_item_id');
     }
 
-    public function pendingAiTravelSuggestions(): HasMany
+    public function pendingTravelSuggestions(): HasMany
     {
-        return $this->hasMany(PendingAiTravelSuggestion::class, 'archive_item_id');
+        return $this->hasMany(PendingTravelSuggestion::class, 'archive_item_id');
+    }
+
+    public function travelSuggestions(): HasMany
+    {
+        return $this->hasMany(TravelSuggestion::class, 'archive_item_id')->orderBy('sort_order');
     }
 
     public function getThumbnailUrlAttribute(): ?string
