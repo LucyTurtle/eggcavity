@@ -103,6 +103,9 @@
 @if(session('success'))
     <div class="card" style="background: var(--accent-muted); border-color: var(--accent); margin-bottom: 1rem;">{{ session('success') }}</div>
 @endif
+@if(session('error'))
+    <div class="card" style="border-color: #dc2626; background: #fef2f2; margin-bottom: 1rem;">{{ session('error') }}</div>
+@endif
 @if($errors->isNotEmpty())
     <div class="card" style="border-color: #dc2626; background: #fef2f2; margin-bottom: 1rem;">
         <p style="margin: 0 0 0.5rem 0; font-weight: 600; color: #dc2626;">Please fix the errors below.</p>
@@ -111,6 +114,24 @@
         </ul>
     </div>
 @endif
+
+@auth
+@if($item->isTravel())
+<form id="wishlist-item-form" method="post" action="{{ route('wishlist.travel.store') }}" style="display: none;">
+    @csrf
+    <input type="hidden" name="item_id" value="{{ $item->id }}">
+    <input type="hidden" name="amount" value="1">
+    <input type="hidden" name="redirect" value="{{ url()->current() }}">
+</form>
+@else
+<form id="wishlist-item-form" method="post" action="{{ route('wishlist.item.store') }}" style="display: none;">
+    @csrf
+    <input type="hidden" name="item_id" value="{{ $item->id }}">
+    <input type="hidden" name="amount" value="1">
+    <input type="hidden" name="redirect" value="{{ url()->current() }}">
+</form>
+@endif
+@endauth
 
 @if($canEdit ?? false)
 <form method="post" action="{{ route('content.item.update', $item) }}" id="item-edit-form">
@@ -122,6 +143,9 @@
             <a href="{{ route('items.index') }}">← Back to items</a>
             <span style="display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center;">
                 <button type="button" id="item-edit-toggle" style="padding: 0.35rem 0.75rem; font-size: 0.9375rem; background: var(--accent-muted); color: var(--accent); border: 1px solid var(--accent); border-radius: var(--radius-sm); cursor: pointer; font-weight: 500;">Edit</button>
+                @auth
+                <button type="submit" form="wishlist-item-form" style="padding: 0.35rem 0.75rem; font-size: 0.9375rem; background: var(--accent-muted); color: var(--accent); border: 1px solid var(--accent); border-radius: var(--radius-sm); cursor: pointer; font-weight: 500;">Add to wishlist</button>
+                @endauth
                 @if($item->source_url)
                     <a href="{{ $item->source_url }}" target="_blank" rel="noopener noreferrer">Open on EggCave.com →</a>
                 @endif
@@ -138,6 +162,9 @@
     <nav style="font-size: 0.9375rem; margin-bottom: 0.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
         <a href="{{ route('items.index') }}">← Back to items</a>
         <span style="display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center;">
+            @auth
+            <button type="submit" form="wishlist-item-form" style="padding: 0.35rem 0.75rem; font-size: 0.9375rem; background: var(--accent-muted); color: var(--accent); border: 1px solid var(--accent); border-radius: var(--radius-sm); cursor: pointer; font-weight: 500;">Add to wishlist</button>
+            @endauth
             @if($item->source_url)
                 <a href="{{ $item->source_url }}" target="_blank" rel="noopener noreferrer">Open on EggCave.com →</a>
             @endif

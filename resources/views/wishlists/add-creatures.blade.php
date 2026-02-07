@@ -60,12 +60,25 @@
     .add-pagination ul.pagination span { background: var(--bg); color: var(--text-secondary); }
     .add-pagination ul.pagination li.disabled span { cursor: not-allowed; }
     .add-pagination ul.pagination li.active span { background: var(--accent-muted); border-color: var(--accent); color: var(--accent); }
+    .archive-toolbar { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; }
+    .archive-toolbar input[type="search"] { padding: 0.5rem 0.75rem; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 0.9375rem; min-width: 12rem; }
+    .archive-toolbar button { padding: 0.5rem 1rem; background: var(--accent); color: white; border: none; border-radius: var(--radius-sm); font-weight: 500; font-size: 0.9375rem; cursor: pointer; }
+    .archive-toolbar button:hover { background: var(--accent-hover); }
 </style>
+
+<form method="get" action="{{ route('wishlists.add.creatures') }}" class="archive-toolbar" style="margin-bottom: 1.25rem;">
+    <input type="search" name="q" value="{{ old('q', $search ?? '') }}" placeholder="Search creatures..." aria-label="Search">
+    <button type="submit">Search</button>
+</form>
 
 @if($creatures->isEmpty())
     <div class="card">
-        <p>No creatures in the archive yet.</p>
-        <p><a href="{{ route('archive.index') }}">View archive</a></p>
+        <p>{{ ($search ?? '') !== '' ? 'No creatures match your search.' : 'No creatures in the archive yet.' }}</p>
+        @if(($search ?? '') !== '')
+            <p><a href="{{ route('wishlists.add.creatures') }}">Clear search</a></p>
+        @else
+            <p><a href="{{ route('archive.index') }}">View archive</a></p>
+        @endif
     </div>
 @else
     <form method="post" action="{{ route('wishlist.creatures.store') }}" id="add-creatures-form">
@@ -117,17 +130,6 @@
             </div>
         @endif
     </form>
-    <script>
-        document.querySelectorAll('#add-creatures-form .add-pagination a[href]').forEach(function(a) {
-            a.addEventListener('click', function(e) {
-                e.preventDefault();
-                var href = this.getAttribute('href');
-                if (href && href !== '#') {
-                    document.getElementById('wishlist-redirect').value = href;
-                    document.getElementById('add-creatures-form').submit();
-                }
-            });
-        });
-    </script>
+    <p style="font-size: 0.875rem; color: var(--text-secondary); margin-top: 0.5rem;">You can change pages above without adding anything; use the button when you want to add selected creatures.</p>
 @endif
 @endsection
