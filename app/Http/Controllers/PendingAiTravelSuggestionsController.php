@@ -2,22 +2,30 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ArchiveItem;
 use App\Models\PendingAiTravelSuggestion;
 use App\Models\TravelSuggestion;
 use Illuminate\Http\Request;
 
 class PendingAiTravelSuggestionsController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $pending = PendingAiTravelSuggestion::with(['archiveItem.stages', 'item'])
-            ->orderBy('archive_item_id')
-            ->orderBy('sort_order')
-            ->get()
-            ->groupBy('archive_item_id');
+        $perPage = (int) $request->get('per_page', 15);
+        $perPage = max(5, min(50, $perPage));
+
+        $creaturesPage = ArchiveItem::query()
+            ->whereIn('id', PendingAiTravelSuggestion::select('archive_item_id'))
+            ->with([
+                'stages',
+                'pendingAiTravelSuggestions' => fn ($q) => $q->with('item')->orderBy('sort_order'),
+            ])
+            ->orderBy('title')
+            ->paginate($perPage)
+            ->withQueryString();
 
         return view('content.pending-ai-travel-suggestions.index', [
-            'pendingByCreature' => $pending,
+            'creaturesPage' => $creaturesPage,
         ]);
     }
 
@@ -25,7 +33,7 @@ class PendingAiTravelSuggestionsController extends Controller
     {
         $creature = $pendingAiTravelSuggestion->archiveItem;
         if (! $creature) {
-            return redirect()->route('content.pending-ai-travel-suggestions.index')
+            return redirect()->back()
                 ->with('error', 'Creature not found.');
         }
 
@@ -43,7 +51,7 @@ class PendingAiTravelSuggestionsController extends Controller
 
         $pendingAiTravelSuggestion->delete();
 
-        return redirect()->route('content.pending-ai-travel-suggestions.index')
+        return redirect()->back()
             ->with('success', "Approved: {$creature->title} → " . $pendingAiTravelSuggestion->item->name . '. Added to all stages.');
     }
 
@@ -51,7 +59,7 @@ class PendingAiTravelSuggestionsController extends Controller
     {
         $pendingAiTravelSuggestion->delete();
 
-        return redirect()->route('content.pending-ai-travel-suggestions.index')
+        return redirect()->back()
             ->with('success', 'Suggestion rejected and removed.');
     }
 }
