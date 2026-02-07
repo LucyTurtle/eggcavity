@@ -131,8 +131,22 @@ class WishlistController extends Controller
 
     public function showAddCreatures(Request $request)
     {
-        $creatures = ArchiveItem::with('images')->orderBy('title')->paginate(30)->withQueryString();
-        return view('wishlists.add-creatures', ['creatures' => $creatures]);
+        $query = ArchiveItem::with('images');
+
+        if ($request->filled('q')) {
+            $search = $request->q;
+            $query->where(function ($q) use ($search) {
+                $q->where('title', 'like', '%' . $search . '%')
+                    ->orWhere('description', 'like', '%' . $search . '%');
+            });
+        }
+
+        $creatures = $query->orderBy('title')->paginate(30)->withQueryString();
+
+        return view('wishlists.add-creatures', [
+            'creatures' => $creatures,
+            'search' => $request->get('q'),
+        ]);
     }
 
     public function showAddItems(Request $request)
@@ -252,7 +266,7 @@ class WishlistController extends Controller
         ]);
 
         $user = Auth::user();
-        $entry = $user->creatureWishlists()->updateOrCreate(
+        $user->creatureWishlists()->updateOrCreate(
             ['archive_item_id' => $valid['archive_item_id']],
             [
                 'amount' => $valid['amount'] ?? 1,
@@ -260,6 +274,11 @@ class WishlistController extends Controller
                 'notes' => $valid['notes'] ?? null,
             ]
         );
+
+        $redirect = $request->input('redirect');
+        if ($redirect && is_string($redirect) && str_starts_with($redirect, '/') && ! str_starts_with($redirect, '//')) {
+            return redirect()->to($redirect)->with('success', 'Added to creature wishlist.');
+        }
 
         return redirect()->route('wishlists.index')->with('success', 'Added to creature wishlist.');
     }
@@ -286,6 +305,11 @@ class WishlistController extends Controller
             ]
         );
 
+        $redirect = $request->input('redirect');
+        if ($redirect && is_string($redirect) && str_starts_with($redirect, '/') && ! str_starts_with($redirect, '//')) {
+            return redirect()->to($redirect)->with('success', 'Added to item wishlist.');
+        }
+
         return redirect()->route('wishlists.index')->with('success', 'Added to item wishlist.');
     }
 
@@ -310,6 +334,11 @@ class WishlistController extends Controller
                 'notes' => $valid['notes'] ?? null,
             ]
         );
+
+        $redirect = $request->input('redirect');
+        if ($redirect && is_string($redirect) && str_starts_with($redirect, '/') && ! str_starts_with($redirect, '//')) {
+            return redirect()->to($redirect)->with('success', 'Added to travel wishlist.');
+        }
 
         return redirect()->route('wishlists.index')->with('success', 'Added to travel wishlist.');
     }

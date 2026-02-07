@@ -7,6 +7,12 @@
     <h1>Travel viewer — by creature</h1>
     <p class="lead">Pick a creature and stage to see that creature with every single travel below.</p>
     <p style="font-size: 0.9375rem; color: var(--text-secondary); margin: 0.5rem 0 0 0;">Click any creature+travel card below to save that combination; saved items are stored in your browser and can be removed anytime.</p>
+    <form method="get" action="{{ route('travel-viewer.by-creature') }}" style="margin-top: 0.75rem;">
+        <label style="font-size: 0.9375rem; color: var(--text); margin: 0; display: inline-flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+            <input type="checkbox" name="available" value="1" {{ $filterAvailable ? 'checked' : '' }} onchange="this.form.submit()">
+            Only show currently available travels (exclude retired &amp; cave cash only)
+        </label>
+    </form>
 </div>
 
 <style>

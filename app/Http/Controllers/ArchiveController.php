@@ -26,27 +26,62 @@ class ArchiveController extends Controller
             $query->whereJsonContains('tags', $tag);
         }
 
-        // Sort
+        // Filter by gender profile
+        if ($request->filled('gender_profile')) {
+            $query->where('gender_profile', 'like', '%' . $request->gender_profile . '%');
+        }
+
+        // Filter by availability (text search)
+        if ($request->filled('availability')) {
+            $query->where('availability', 'like', '%' . $request->availability . '%');
+        }
+
+        // Filter by dates (e.g. year or month text)
+        if ($request->filled('dates_filter')) {
+            $query->where('dates', 'like', '%' . $request->dates_filter . '%');
+        }
+
+        // Sort: title or date added (created_at when we added to DB)
         $sort = $request->get('sort', 'title');
         $dir = $request->get('dir', 'asc');
-        if (!in_array($dir, ['asc', 'desc'])) {
+        if (! in_array($dir, ['asc', 'desc'])) {
             $dir = 'asc';
         }
-        $allowedSort = ['title', 'published_at', 'created_at'];
+        $allowedSort = ['title', 'created_at'];
         if (in_array($sort, $allowedSort)) {
             $query->orderBy($sort, $dir);
         } else {
             $query->orderBy('title', 'asc');
         }
 
-        $items = $query->paginate(30)->withQueryString(); // 6 rows × 5 columns = 30 items
+        $items = $query->paginate(30)->withQueryString();
+
+        // Distinct values for filter dropdowns
+        $genderProfiles = ArchiveItem::whereNotNull('gender_profile')
+            ->where('gender_profile', '!=', '')
+            ->distinct()
+            ->orderBy('gender_profile')
+            ->pluck('gender_profile')
+            ->toArray();
+
+        $availabilities = ArchiveItem::whereNotNull('availability')
+            ->where('availability', '!=', '')
+            ->distinct()
+            ->orderBy('availability')
+            ->pluck('availability')
+            ->toArray();
 
         return view('archive.index', [
             'items' => $items,
             'search' => $request->get('q'),
             'tag' => $request->get('tag'),
+            'gender_profile' => $request->get('gender_profile'),
+            'availability_filter' => $request->get('availability'),
+            'dates_filter' => $request->get('dates_filter'),
             'sort' => $sort,
             'dir' => $dir,
+            'genderProfiles' => $genderProfiles,
+            'availabilities' => $availabilities,
         ]);
     }
 

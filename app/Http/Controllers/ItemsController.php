@@ -53,22 +53,33 @@ class ItemsController extends Controller
             $query->where('is_cavecash', true);
         }
 
-        // Sort
+        // Available only: exclude retired (currently obtainable)
+        if ($request->filled('available')) {
+            $query->where('is_retired', false);
+        }
+
+        // Sort: name, first appeared, date added, or price (restock_price)
         $sort = $request->get('sort', 'name');
         $dir = $request->get('dir', 'asc');
-        if (!in_array($dir, ['asc', 'desc'])) {
+        if (! in_array($dir, ['asc', 'desc'])) {
             $dir = 'asc';
         }
-        $allowedSort = ['name', 'first_appeared', 'sort_order', 'created_at'];
-        if (in_array($sort, $allowedSort)) {
+        $driver = $query->getConnection()->getDriverName();
+        $priceExpr = $driver === 'sqlite'
+            ? "CAST(TRIM(REPLACE(REPLACE(REPLACE(COALESCE(restock_price, '0'), ',', ''), ' EC', ''), ' ', '')) AS INTEGER)"
+            : "CAST(TRIM(REPLACE(REPLACE(REPLACE(COALESCE(restock_price, '0'), ',', ''), ' EC', ''), ' ', '')) AS UNSIGNED)";
+        $allowedSort = ['name', 'first_appeared', 'created_at', 'restock_price'];
+        if ($sort === 'restock_price') {
+            $query->orderByRaw("({$priceExpr}) {$dir}")->orderBy('name', 'asc');
+        } elseif (in_array($sort, ['name', 'first_appeared', 'created_at'])) {
             $query->orderBy($sort, $dir);
         } else {
             $query->orderBy('name', 'asc');
         }
 
-        $items = $query->paginate(30)->withQueryString(); // 6 rows × 5 columns
+        $items = $query->paginate(30)->withQueryString();
 
-        // Get unique shops and use types for filters
+        // Get unique shops for filter
         $shops = Item::whereNotNull('associated_shop')
             ->distinct()
             ->orderBy('associated_shop')
@@ -82,6 +93,7 @@ class ItemsController extends Controller
             'use_type' => $request->get('use_type'),
             'filter_retired' => $request->filled('retired'),
             'filter_cavecash' => $request->filled('cavecash'),
+            'filter_available' => $request->filled('available'),
             'sort' => $sort,
             'dir' => $dir,
             'shops' => $shops,

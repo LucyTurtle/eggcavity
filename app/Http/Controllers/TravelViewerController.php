@@ -11,7 +11,12 @@ class TravelViewerController extends Controller
     private function travelViewerData(): array
     {
         $creatures = ArchiveItem::with('stages')->orderBy('title')->get();
-        $allTravels = Item::whereRaw('LOWER(use) = ?', ['travel'])->get(['id', 'name', 'slug', 'image_url']);
+        $availableOnly = request()->filled('available');
+        $travelsQuery = Item::whereRaw('LOWER(use) = ?', ['travel']);
+        if ($availableOnly) {
+            $travelsQuery->where('is_retired', false)->where('is_cavecash', false);
+        }
+        $allTravels = $travelsQuery->get(['id', 'name', 'slug', 'image_url']);
 
         $travels = $allTravels->filter(fn ($t) => ! $this->isTrinketTravel($t->name));
         $travels = $travels->sortBy('name', SORT_NATURAL)->values();
@@ -54,6 +59,7 @@ class TravelViewerController extends Controller
             'travelsForJs' => $travelsForJs,
             'trinketTravelsForJs' => $trinketTravelsForJs,
             'allTravelsForJs' => $allTravelsForJs,
+            'filterAvailable' => $availableOnly,
         ];
     }
 

@@ -3,6 +3,12 @@
 @section('title', 'Items')
 
 @section('content')
+@if(session('success'))
+    <div class="card" style="background: var(--accent-muted); border-color: var(--accent); margin-bottom: 1rem;">{{ session('success') }}</div>
+@endif
+@if(session('error'))
+    <div class="card" style="border-color: #dc2626; background: #fef2f2; margin-bottom: 1rem;">{{ session('error') }}</div>
+@endif
 <div class="page-header">
     <h1>Items</h1>
     @if($shop || $use_type || $filter_retired || $filter_cavecash)
@@ -36,6 +42,14 @@
         margin-bottom: 1.5rem;
     }
     .items-toolbar form { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; }
+    .items-toolbar--filters { display: grid; grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr)); gap: 1rem 1.25rem; align-items: end; margin-top: -0.5rem; }
+    .items-toolbar--filters .items-toolbar__field { display: flex; flex-direction: column; gap: 0.25rem; min-width: 0; }
+    .items-toolbar--filters .items-toolbar__field label { font-size: 0.9375rem; color: var(--text-secondary); margin: 0; }
+    .items-toolbar--filters .items-toolbar__field select,
+    .items-toolbar--filters .items-toolbar__field input[type="text"],
+    .items-toolbar--filters .items-toolbar__field input[type="number"] { width: 100%; min-width: 0; }
+    .items-toolbar--filters .items-toolbar__field--checkbox { flex-direction: row; align-items: center; }
+    .items-toolbar--filters .items-toolbar__field--checkbox label { display: flex; align-items: center; gap: 0.35rem; }
     .items-toolbar input[type="search"] {
         padding: 0.5rem 0.75rem;
         border: 1px solid var(--border);
@@ -43,7 +57,8 @@
         font-size: 0.9375rem;
         min-width: 12rem;
     }
-    .items-toolbar select {
+    .items-toolbar select,
+    .items-toolbar input[type="number"] {
         padding: 0.5rem 0.75rem;
         border: 1px solid var(--border);
         border-radius: var(--radius-sm);
@@ -132,24 +147,29 @@
     .items-pagination ul.pagination li.active span { background: var(--accent-muted); border-color: var(--accent); color: var(--accent); }
 </style>
 
-@if($shop || $use_type || $filter_retired || $filter_cavecash)
+@if($shop || $use_type || $filter_retired || $filter_cavecash || $filter_available)
     <div class="card" style="border-color: var(--accent); background: var(--accent-muted); margin-bottom: 1rem;">
         <p style="margin: 0;">
-            @if($shop)Filtering by shop: <strong>{{ $shop }}</strong>
+            @if($shop)
+                Shop: <strong>{{ $shop }}</strong>
             @endif
-            @if($shop && ($use_type || $filter_retired || $filter_cavecash)) ·
+            @if($use_type)
+                @if($shop) · @endif
+                Type: <strong>{{ ucfirst($use_type) }}</strong>
             @endif
-            @if($use_type)Filtering by type: <strong>{{ ucfirst($use_type) }}</strong>
+            @if($filter_retired)
+                @if($shop || $use_type) · @endif
+                Retired only
             @endif
-            @if($use_type && ($filter_retired || $filter_cavecash)) ·
+            @if($filter_cavecash)
+                @if($shop || $use_type || $filter_retired) · @endif
+                Cave cash only
             @endif
-            @if($filter_retired)Retired only
+            @if($filter_available)
+                @if($shop || $use_type || $filter_retired || $filter_cavecash) · @endif
+                Available only
             @endif
-            @if($filter_retired && $filter_cavecash) ·
-            @endif
-            @if($filter_cavecash)Cave cash only
-            @endif
-            <a href="{{ route('items.index', array_merge(request()->except(['shop', 'use_type', 'retired', 'cavecash']), ['sort' => $sort, 'dir' => $dir])) }}" style="margin-left: 0.5rem; color: var(--accent); font-weight: 500;">Clear filters</a>
+            <a href="{{ route('items.index', ['sort' => $sort, 'dir' => $dir]) }}" style="margin-left: 0.5rem; color: var(--accent); font-weight: 500;">Clear filters</a>
         </p>
     </div>
 @endif
@@ -162,49 +182,63 @@
     @endif
     @if($filter_retired)<input type="hidden" name="retired" value="1">
     @endif
-    @if($filter_cavecash)<input type="hidden" name="cavecash" value="1">
-    @endif
+    @if($filter_cavecash)<input type="hidden" name="cavecash" value="1">@endif
+    @if($filter_available ?? false)<input type="hidden" name="available" value="1">@endif
     <input type="hidden" name="sort" value="{{ $sort }}">
     <input type="hidden" name="dir" value="{{ $dir }}">
     <button type="submit">Search</button>
 </form>
 
-<form method="get" action="{{ route('items.index') }}" class="items-toolbar" style="margin-top: -0.5rem;">
-    @if(request('q'))<input type="hidden" name="q" value="{{ request('q') }}">
-    @endif
-    @if($shop)<input type="hidden" name="shop" value="{{ $shop }}">
-    @endif
-    @if($use_type)<input type="hidden" name="use_type" value="{{ $use_type }}">
-    @endif
-    <label for="shop" style="font-size: 0.9375rem; color: var(--text-secondary);">Shop</label>
-    <select name="shop" id="shop" onchange="this.form.submit()">
-        <option value="">All shops</option>
-        @foreach($shops as $s)
-            <option value="{{ $s }}" {{ $shop === $s ? 'selected' : '' }}>{{ $s }}</option>
-        @endforeach
-    </select>
-    <label for="use_type" style="font-size: 0.9375rem; color: var(--text-secondary); margin-left: 0.5rem;">Type</label>
-    <select name="use_type" id="use_type" onchange="this.form.submit()">
-        <option value="">All types</option>
-        <option value="item" {{ $use_type === 'item' ? 'selected' : '' }}>Item</option>
-        <option value="travel" {{ $use_type === 'travel' ? 'selected' : '' }}>Travel</option>
-        <option value="other" {{ $use_type === 'other' ? 'selected' : '' }}>Other</option>
-    </select>
-    <span style="margin-left: 0.5rem; display: inline-flex; align-items: center; gap: 0.5rem;">
-        <label style="font-size: 0.9375rem; color: var(--text-secondary); margin: 0;"><input type="checkbox" name="retired" value="1" {{ $filter_retired ? 'checked' : '' }} onchange="this.form.submit()"> Retired only</label>
-        <label style="font-size: 0.9375rem; color: var(--text-secondary); margin: 0;"><input type="checkbox" name="cavecash" value="1" {{ $filter_cavecash ? 'checked' : '' }} onchange="this.form.submit()"> Cave cash only</label>
-    </span>
-    <label for="sort" style="font-size: 0.9375rem; color: var(--text-secondary); margin-left: 0.5rem;">Sort by</label>
-    <select name="sort" id="sort" onchange="this.form.submit()">
-        <option value="name" {{ $sort === 'name' ? 'selected' : '' }}>Name</option>
-        <option value="first_appeared" {{ $sort === 'first_appeared' ? 'selected' : '' }}>Date</option>
-        <option value="sort_order" {{ $sort === 'sort_order' ? 'selected' : '' }}>Order</option>
-        <option value="created_at" {{ $sort === 'created_at' ? 'selected' : '' }}>Added</option>
-    </select>
-    <select name="dir" onchange="this.form.submit()">
-        <option value="asc" {{ $dir === 'asc' ? 'selected' : '' }}>A–Z / Oldest first</option>
-        <option value="desc" {{ $dir === 'desc' ? 'selected' : '' }}>Z–A / Newest first</option>
-    </select>
+<form method="get" action="{{ route('items.index') }}" class="items-toolbar items-toolbar--filters">
+    @if(request('q'))<input type="hidden" name="q" value="{{ request('q') }}">@endif
+    @if($shop ?? null)<input type="hidden" name="shop" value="{{ $shop }}">@endif
+    @if($use_type ?? null)<input type="hidden" name="use_type" value="{{ $use_type }}">@endif
+    @if($filter_retired ?? false)<input type="hidden" name="retired" value="1">@endif
+    @if($filter_cavecash ?? false)<input type="hidden" name="cavecash" value="1">@endif
+    @if($filter_available ?? false)<input type="hidden" name="available" value="1">@endif
+    <div class="items-toolbar__field">
+        <label for="shop">Shop</label>
+        <select name="shop" id="shop" onchange="this.form.submit()">
+            <option value="">All shops</option>
+            @foreach($shops as $s)
+                <option value="{{ $s }}" {{ $shop === $s ? 'selected' : '' }}>{{ $s }}</option>
+            @endforeach
+        </select>
+    </div>
+    <div class="items-toolbar__field">
+        <label for="use_type">Type</label>
+        <select name="use_type" id="use_type" onchange="this.form.submit()">
+            <option value="">All types</option>
+            <option value="item" {{ $use_type === 'item' ? 'selected' : '' }}>Item</option>
+            <option value="travel" {{ $use_type === 'travel' ? 'selected' : '' }}>Travel</option>
+            <option value="other" {{ $use_type === 'other' ? 'selected' : '' }}>Other</option>
+        </select>
+    </div>
+    <div class="items-toolbar__field items-toolbar__field--checkbox">
+        <label><input type="checkbox" name="retired" value="1" {{ $filter_retired ? 'checked' : '' }} onchange="this.form.submit()"> Retired only</label>
+    </div>
+    <div class="items-toolbar__field items-toolbar__field--checkbox">
+        <label><input type="checkbox" name="cavecash" value="1" {{ $filter_cavecash ? 'checked' : '' }} onchange="this.form.submit()"> Cave cash only</label>
+    </div>
+    <div class="items-toolbar__field items-toolbar__field--checkbox">
+        <label><input type="checkbox" name="available" value="1" {{ $filter_available ? 'checked' : '' }} onchange="this.form.submit()"> Available only</label>
+    </div>
+    <div class="items-toolbar__field">
+        <label for="sort">Sort by</label>
+        <select name="sort" id="sort" onchange="this.form.submit()">
+            <option value="name" {{ $sort === 'name' ? 'selected' : '' }}>Name</option>
+            <option value="first_appeared" {{ $sort === 'first_appeared' ? 'selected' : '' }}>First appeared</option>
+            <option value="created_at" {{ $sort === 'created_at' ? 'selected' : '' }}>Date added</option>
+            <option value="restock_price" {{ $sort === 'restock_price' ? 'selected' : '' }}>Price</option>
+        </select>
+    </div>
+    <div class="items-toolbar__field">
+        <label for="dir">Direction</label>
+        <select name="dir" id="dir" onchange="this.form.submit()">
+            <option value="asc" {{ $dir === 'asc' ? 'selected' : '' }}>Ascending</option>
+            <option value="desc" {{ $dir === 'desc' ? 'selected' : '' }}>Descending</option>
+        </select>
+    </div>
 </form>
 
 @if($items->isEmpty())

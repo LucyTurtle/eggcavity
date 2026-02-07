@@ -94,7 +94,36 @@
         font-size: 0.9375rem; 
     }
     .archive-detail .entry-by { font-size: 0.875rem; color: var(--text-secondary); margin-top: 1rem; }
-    .archive-detail .tags-list { margin-top: 0.5rem; }
+    .archive-detail .tags-dropdown { margin-top: 1rem; }
+    .archive-detail .tags-dropdown summary {
+        font-size: 0.9375rem;
+        font-weight: 600;
+        cursor: pointer;
+        list-style: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.35rem 0.5rem;
+        border-radius: var(--radius-sm);
+        background: var(--accent-muted);
+        color: var(--accent);
+        border: 1px solid transparent;
+        user-select: none;
+    }
+    .archive-detail .tags-dropdown summary::-webkit-details-marker { display: none; }
+    .archive-detail .tags-dropdown summary::after { content: '▼'; font-size: 0.65rem; opacity: 0.8; }
+    .archive-detail .tags-dropdown[open] summary::after { transform: scaleY(-1); }
+    .archive-detail .tags-dropdown__panel {
+        margin-top: 0.5rem;
+        padding: 0.75rem;
+        max-height: 14rem;
+        overflow-y: auto;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        background: var(--surface);
+        box-shadow: var(--shadow);
+    }
+    .archive-detail .tags-dropdown__panel .tags-list a,
     .archive-detail .tags-list a {
         display: inline-block;
         font-size: 0.8125rem;
@@ -107,6 +136,7 @@
         text-decoration: none;
         transition: background 0.15s, color 0.15s;
     }
+    .archive-detail .tags-dropdown__panel .tags-list a:hover,
     .archive-detail .tags-list a:hover { background: var(--accent); color: white; }
     .archive-detail .recommended-travels-grid {
         display: grid;
@@ -215,6 +245,15 @@
     </div>
 @endif
 
+@auth
+<form id="wishlist-creature-form" method="post" action="{{ route('wishlist.creature.store') }}" style="display: none;">
+    @csrf
+    <input type="hidden" name="archive_item_id" value="{{ $item->id }}">
+    <input type="hidden" name="amount" value="1">
+    <input type="hidden" name="redirect" value="{{ url()->current() }}">
+</form>
+@endauth
+
 @if($canApplyRecommendations)
 <form method="post" action="{{ route('content.creature.update', $item) }}" id="archive-edit-form">
     @csrf
@@ -225,6 +264,9 @@
             <a href="{{ route('archive.index') }}">← Back to archive</a>
             <span style="display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center;">
                 <button type="button" id="archive-edit-toggle" style="padding: 0.35rem 0.75rem; font-size: 0.9375rem; background: var(--accent-muted); color: var(--accent); border: 1px solid var(--accent); border-radius: var(--radius-sm); cursor: pointer; font-weight: 500;">Edit</button>
+                @auth
+                <button type="submit" form="wishlist-creature-form" style="padding: 0.35rem 0.75rem; font-size: 0.9375rem; background: var(--accent-muted); color: var(--accent); border: 1px solid var(--accent); border-radius: var(--radius-sm); cursor: pointer; font-weight: 500;">Add to wishlist</button>
+                @endauth
                 @if($item->source_url)
                     <a href="{{ $item->source_url }}" target="_blank" rel="noopener noreferrer">Open on EggCave.com →</a>
                 @endif
@@ -241,6 +283,9 @@
     <nav style="font-size: 0.9375rem; margin-bottom: 0.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
         <a href="{{ route('archive.index') }}">← Back to archive</a>
         <span style="display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center;">
+            @auth
+            <button type="submit" form="wishlist-creature-form" style="padding: 0.35rem 0.75rem; font-size: 0.9375rem; background: var(--accent-muted); color: var(--accent); border: 1px solid var(--accent); border-radius: var(--radius-sm); cursor: pointer; font-weight: 500;">Add to wishlist</button>
+            @endauth
             @if($item->source_url)
                 <a href="{{ $item->source_url }}" target="_blank" rel="noopener noreferrer">Open on EggCave.com →</a>
             @endif
@@ -471,19 +516,25 @@
     @endif
 
     @if(($item->tags && count($item->tags) > 0) || $canApplyRecommendations)
-        <h3 style="font-size: 0.9375rem; margin: 1rem 0 0.25rem 0;">Tags</h3>
-        <div class="view-mode tags-list">
-            @if($item->tags && count($item->tags) > 0)
-                @foreach($item->tags as $tag)
-                    <a href="{{ route('archive.index', ['tag' => $tag]) }}" style="display: inline-block; font-size: 0.8125rem; padding: 0.25rem 0.5rem; margin-right: 0.5rem; margin-bottom: 0.5rem; border-radius: var(--radius-sm); background: var(--accent-muted); color: var(--accent); text-decoration: none;">{{ $tag }}</a>
-                @endforeach
-            @endif
-        </div>
-        @if($canApplyRecommendations)
-        <div class="edit-mode" style="display: none;">
-            <div class="form-group" style="margin: 0;"><label>Tags (comma-separated)</label><input type="text" name="tags" value="{{ old('tags', $item->tags ? (is_array($item->tags) ? implode(', ', $item->tags) : (string) $item->tags) : '') }}" placeholder="tag1, tag2, tag3"></div>
-        </div>
-        @endif
+        <details class="tags-dropdown">
+            <summary>Tags@if($item->tags && count($item->tags) > 0) ({{ count($item->tags) }})@endif</summary>
+            <div class="tags-dropdown__panel">
+                <div class="view-mode tags-list">
+                    @if($item->tags && count($item->tags) > 0)
+                        @foreach($item->tags as $tag)
+                            <a href="{{ route('archive.index', ['tag' => $tag]) }}">{{ $tag }}</a>
+                        @endforeach
+                    @else
+                        <p style="margin: 0; font-size: 0.875rem; color: var(--text-secondary);">No tags</p>
+                    @endif
+                </div>
+                @if($canApplyRecommendations)
+                <div class="edit-mode" style="display: none; margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid var(--border);">
+                    <div class="form-group" style="margin: 0;"><label>Tags (comma-separated)</label><input type="text" name="tags" value="{{ old('tags', $item->tags ? (is_array($item->tags) ? implode(', ', $item->tags) : (string) $item->tags) : '') }}" placeholder="tag1, tag2, tag3"></div>
+                </div>
+                @endif
+            </div>
+        </details>
     @endif
 
     @if($canApplyRecommendations)
