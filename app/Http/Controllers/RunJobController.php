@@ -18,10 +18,6 @@ class RunJobController extends Controller
             'log_file' => 'items-scrape-last.log',
             'label' => 'Items scraper',
         ],
-        'travels:suggest-by-image' => [
-            'log_file' => 'travels-suggest-by-image-last.log',
-            'label' => 'Suggest travels (image match)',
-        ],
     ];
 
     public const PENDING_CACHE_PREFIX = 'run_job_pending_';
@@ -93,7 +89,7 @@ class RunJobController extends Controller
                 try {
                     $dt = Carbon::parse($parsed['at'], config('app.timezone'));
                     $lastAtEggcave = $dt->setTimezone(config('app.eggcave_timezone'))
-                        ->format('M j, Y \a\t g:i A') . ' EggCave time';
+                        ->format('M j, Y \a\t g:i A') . ' ECT';
                 } catch (\Throwable) {
                     $lastAtEggcave = $parsed['at'];
                 }
