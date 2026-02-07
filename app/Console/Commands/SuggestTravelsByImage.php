@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Models\ArchiveItem;
 use App\Models\Item;
 use App\Models\PendingAiTravelSuggestion;
+use App\Models\TravelSuggestion;
 use App\Services\ImageMatchService;
 use Illuminate\Console\Command;
 
@@ -91,6 +92,18 @@ class SuggestTravelsByImage extends Command
 
             usort($scores, fn ($a, $b) => $b['score'] <=> $a['score']);
             $top = array_slice($scores, 0, 5);
+
+            $stageIds = $creature->stages->pluck('id')->toArray();
+            $alreadySuggestedItemIds = array_unique(array_merge(
+                TravelSuggestion::whereIn('archive_stage_id', $stageIds)->pluck('item_id')->toArray(),
+                $creature->pendingAiTravelSuggestions()->pluck('item_id')->toArray()
+            ));
+            $top = array_values(array_filter($top, fn ($entry) => ! in_array($entry['item']->id, $alreadySuggestedItemIds, true)));
+
+            if (empty($top)) {
+                $this->line("  [skip] {$creature->title} (all top matches already suggested)");
+                continue;
+            }
 
             $creature->pendingAiTravelSuggestions()->delete();
             foreach ($top as $sortOrder => $entry) {
