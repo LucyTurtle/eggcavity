@@ -27,3 +27,6 @@ yarn-error.log
 /.idea
 /.vscode
 eggcave-wishlist-sync
+
+# Private Tampermonkey scripts (local only)
+/scripts/private/

@@ -22,15 +22,16 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/', fn () => view('home'))->name('home');
 
-// Public JSON API for archive creatures (used by standalone wishlist-sync script)
+// Public JSON API: archive creatures (id, title, slug)
 Route::get('/api/archive-creatures', function () {
     $creatures = ArchiveItem::query()
+        ->whereNotIn('slug', ArchiveItem::EXCLUDED_FROM_LISTING_SLUGS)
         ->orderBy('title')
         ->get(['id', 'title', 'slug']);
     return response()->json(['creatures' => $creatures]);
 })->name('api.archive-creatures');
 
-// Public JSON API: item name -> restock price (for usershop pricing script when no user-shop results)
+// Public JSON API: item name -> restock price
 Route::get('/api/items-restock-prices', function () {
     $items = Item::query()
         ->whereNotNull('restock_price')

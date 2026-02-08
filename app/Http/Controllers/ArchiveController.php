@@ -11,7 +11,8 @@ class ArchiveController extends Controller
 {
     public function index(Request $request)
     {
-        $query = ArchiveItem::with('images');
+        $query = ArchiveItem::with('images')
+            ->whereNotIn('slug', ArchiveItem::EXCLUDED_FROM_LISTING_SLUGS);
 
         // Search: title or description
         if ($search = $request->filled('q') ? $request->q : null) {
@@ -95,22 +96,25 @@ class ArchiveController extends Controller
 
         $items = $query->paginate(30)->withQueryString();
 
-        // Distinct values for filter dropdowns
-        $genderProfiles = ArchiveItem::whereNotNull('gender_profile')
+        // Distinct values for filter dropdowns (exclude non-creature slugs)
+        $genderProfiles = ArchiveItem::whereNotIn('slug', ArchiveItem::EXCLUDED_FROM_LISTING_SLUGS)
+            ->whereNotNull('gender_profile')
             ->where('gender_profile', '!=', '')
             ->distinct()
             ->orderBy('gender_profile')
             ->pluck('gender_profile')
             ->toArray();
 
-        $availabilities = ArchiveItem::whereNotNull('availability')
+        $availabilities = ArchiveItem::whereNotIn('slug', ArchiveItem::EXCLUDED_FROM_LISTING_SLUGS)
+            ->whereNotNull('availability')
             ->where('availability', '!=', '')
             ->distinct()
             ->orderBy('availability')
             ->pluck('availability')
             ->toArray();
 
-        $habitats = ArchiveItem::whereNotNull('habitat')
+        $habitats = ArchiveItem::whereNotIn('slug', ArchiveItem::EXCLUDED_FROM_LISTING_SLUGS)
+            ->whereNotNull('habitat')
             ->where('habitat', '!=', '')
             ->distinct()
             ->orderBy('habitat')
@@ -128,13 +132,15 @@ class ArchiveController extends Controller
             'Thief Shop',
         ];
         $obtainedFromList = collect($obtainedFromAtoms)->filter(function ($source) {
-            return ArchiveItem::whereNotNull('obtained_from')
+            return ArchiveItem::whereNotIn('slug', ArchiveItem::EXCLUDED_FROM_LISTING_SLUGS)
+                ->whereNotNull('obtained_from')
                 ->where('obtained_from', 'like', '%' . $source . '%')
                 ->exists();
         })->values()->sort()->values()->toArray();
 
         // Distinct tags from all creatures (tags stored as JSON array)
-        $allTags = ArchiveItem::whereNotNull('tags')
+        $allTags = ArchiveItem::whereNotIn('slug', ArchiveItem::EXCLUDED_FROM_LISTING_SLUGS)
+            ->whereNotNull('tags')
             ->get()
             ->pluck('tags')
             ->flatten()
@@ -168,6 +174,9 @@ class ArchiveController extends Controller
 
     public function show(string $slug)
     {
+        if (in_array($slug, ArchiveItem::EXCLUDED_FROM_LISTING_SLUGS, true)) {
+            abort(404);
+        }
         $item = ArchiveItem::where('slug', $slug)->with(['images', 'stages', 'travelSuggestions.item'])->firstOrFail();
         [$trinketTravels, $recommendedTravels] = $this->computeRecommendedTravels($item);
 
@@ -199,6 +208,7 @@ class ArchiveController extends Controller
         }
 
         return ArchiveItem::where('id', '!=', $item->id)
+            ->whereNotIn('slug', ArchiveItem::EXCLUDED_FROM_LISTING_SLUGS)
             ->where(function ($q) use ($item, $hasTags, $hasDesigner, $hasAuthor) {
                 if ($hasTags) {
                     $q->where(function ($q2) use ($item) {
