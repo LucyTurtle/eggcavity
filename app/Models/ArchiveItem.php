@@ -7,6 +7,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class ArchiveItem extends Model
 {
+    /** Slugs that are not real creatures (e.g. EggCave's "The Archives" / search page). Excluded from listing and API. */
+    public const EXCLUDED_FROM_LISTING_SLUGS = ['search'];
+
     protected $fillable = [
         'title',
         'slug',

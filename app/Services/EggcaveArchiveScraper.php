@@ -136,7 +136,7 @@ class EggcaveArchiveScraper
                 continue;
             }
             $slug = trim($m[1], '/');
-            if ($slug !== '' && !in_array($slug, $slugs, true)) {
+            if ($slug !== '' && !in_array($slug, $slugs, true) && !in_array($slug, ArchiveItem::EXCLUDED_FROM_LISTING_SLUGS, true)) {
                 $slugs[] = $slug;
             }
         }
