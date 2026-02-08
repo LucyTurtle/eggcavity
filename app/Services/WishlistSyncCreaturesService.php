@@ -14,14 +14,6 @@ class WishlistSyncCreaturesService
     /** Seconds per request for run-time estimate (from real runs: ~1043 requests in ~20 min ≈ 1.2s/request) */
     private const ESTIMATE_SEC_PER_REQUEST = 1.2;
 
-    private function httpHeaders(): array
-    {
-        return [
-            'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-            'Accept' => 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-            'Accept-Language' => 'en-US,en;q=0.9',
-        ];
-    }
 
     /**
      * Scan the Eggcave user page for links, follow them to the user's creature pages,
@@ -73,7 +65,7 @@ class WishlistSyncCreaturesService
     private function fetchProfileArchiveSlugs(string $eggcaveUsername, ?callable $onProgress = null): array
     {
         $url = self::EGGCAVE_BASE . '/@' . $eggcaveUsername;
-        $response = Http::withHeaders($this->httpHeaders())->timeout(30)->get($url);
+        $response = Http::withHeaders(EggcaveBrowserHeaders::forRequest($url))->timeout(30)->get($url);
         if (! $response->successful()) {
             return [];
         }
@@ -107,7 +99,7 @@ class WishlistSyncCreaturesService
             $delayMs = random_int(self::REQUEST_DELAY_MS_MIN, self::REQUEST_DELAY_MS_MAX);
             usleep($delayMs * 1000);
             $creatureUrl = self::EGGCAVE_BASE . '/egg/' . $clickId;
-            $response = Http::withHeaders($this->httpHeaders())->timeout(30)->get($creatureUrl);
+            $response = Http::withHeaders(EggcaveBrowserHeaders::forRequest($creatureUrl, $url))->timeout(30)->get($creatureUrl);
             $slug = null;
             if ($response->successful()) {
                 // Creature page has species in e.g. <h1>...<a href="https://eggcave.com/archives/trefulp">Trefulp</a></h1>

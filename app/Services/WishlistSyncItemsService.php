@@ -38,15 +38,6 @@ class WishlistSyncItemsService
         return self::SHOP_NAMES[$shopId] ?? "Shop {$shopId}";
     }
 
-    private function httpHeaders(): array
-    {
-        return [
-            'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-            'Accept' => 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-            'Accept-Language' => 'en-US,en;q=0.9',
-            'Referer' => self::EGGCAVE_BASE . '/',
-        ];
-    }
 
     /**
      * Scrape the user's item collection for one egg (all shops, all pages), then add every
@@ -110,7 +101,7 @@ class WishlistSyncItemsService
         foreach (self::SHOP_IDS as $shopId) {
             $url = self::EGGCAVE_BASE . '/egg/' . $eggId . '/collection?shop=' . $shopId . '&page=1';
             $this->delay();
-            $response = Http::withHeaders($this->httpHeaders())->timeout(30)->get($url);
+            $response = Http::withHeaders(EggcaveBrowserHeaders::forRequest($url))->timeout(30)->get($url);
             if (! $response->successful()) {
                 if ($onProgress) {
                     $onProgress('  ' . $this->shopLabel($shopId) . ': HTTP ' . $response->status());
@@ -168,10 +159,12 @@ class WishlistSyncItemsService
                 $onProgress('  ' . $this->shopLabel($shopId) . ": fetching (est. ~{$shopEstStr})...");
             }
             $shopStart = microtime(true);
+            $prevPageUrl = self::EGGCAVE_BASE . '/egg/' . $eggId . '/collection?shop=' . $shopId . '&page=1';
             for ($page = 2; $page <= $lastPage; $page++) {
                 $this->delay();
                 $url = self::EGGCAVE_BASE . '/egg/' . $eggId . '/collection?shop=' . $shopId . '&page=' . $page;
-                $response = Http::withHeaders($this->httpHeaders())->timeout(30)->get($url);
+                $response = Http::withHeaders(EggcaveBrowserHeaders::forRequest($url, $prevPageUrl))->timeout(30)->get($url);
+                $prevPageUrl = $url;
                 if (! $response->successful()) {
                     continue;
                 }
