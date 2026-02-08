@@ -10,6 +10,16 @@
 
 @include('wishlists._wishlist-section-styles')
 
+@if(!empty($tampermonkeyArrayText))
+    <div class="card" style="margin-bottom: 1.5rem; border-color: var(--accent); background: var(--accent-muted);">
+        <p style="margin: 0 0 0.5rem 0; font-size: 0.8125rem; font-weight: 600; color: var(--text-secondary);">Developer: Tampermonkey <code>DEFAULT_WISHLIST</code> (copy into eggcave-shop-wishlist-autobuy.user.js)</p>
+        <pre id="tampermonkey-array" style="margin: 0; padding: 0.75rem; font-size: 0.8125rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); overflow-x: auto; white-space: pre;">{{ $tampermonkeyArrayText }}</pre>
+        <p style="margin: 0.5rem 0 0 0; font-size: 0.75rem; color: var(--text-secondary);">
+            <button type="button" class="btn-copy-wishlist" data-copy="tampermonkey-array" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">Copy array</button>
+        </p>
+    </div>
+@endif
+
 <div class="wishlist-section">
     <h2>Items ({{ $itemWishlists->count() }}) <a href="{{ route('wishlists.add.items') }}" class="btn-add">Add to wishlist</a></h2>
     <p style="font-size: 0.8125rem; color: var(--text-secondary); margin: -0.5rem 0 0.75rem 0;">Non-travel items only.</p>
@@ -77,7 +87,10 @@ document.querySelectorAll('.btn-copy-wishlist').forEach(function(btn) {
     btn.addEventListener('click', function() {
         var id = this.getAttribute('data-copy');
         var el = document.getElementById(id);
-        if (el) { el.select(); navigator.clipboard.writeText(el.value).then(function() { btn.textContent = 'Copied!'; setTimeout(function() { btn.textContent = 'Copy'; }, 1500); }); }
+        if (!el) return;
+        var text = el.value !== undefined ? el.value : el.textContent;
+        if (el.select) el.select();
+        navigator.clipboard.writeText(text).then(function() { btn.textContent = 'Copied!'; setTimeout(function() { btn.textContent = el.value !== undefined ? 'Copy' : 'Copy array'; }, 1500); });
     });
 });
 </script>

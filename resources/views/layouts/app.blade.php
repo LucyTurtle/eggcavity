@@ -341,6 +341,37 @@
             background: #ffffff;
             background-image: none;
         }
+        /* Mobile: touch targets (min 44px) and 16px inputs to avoid iOS zoom */
+        @media (max-width: 768px) {
+            nav a {
+                min-height: 44px;
+                display: inline-flex;
+                align-items: center;
+                padding-top: 0.75rem;
+                padding-bottom: 0.75rem;
+            }
+            .nav-dropdown .nav-dropdown-trigger {
+                min-height: 44px;
+                padding-top: 0.75rem;
+                padding-bottom: 0.75rem;
+            }
+            .user-menu-trigger {
+                width: 44px;
+                height: 44px;
+            }
+            .user-menu-dropdown a,
+            .user-menu-dropdown button {
+                min-height: 44px;
+                padding: 0.75rem 1rem;
+                display: flex;
+                align-items: center;
+            }
+            main input[type="email"],
+            main input[type="text"],
+            main input[type="search"] {
+                font-size: 16px;
+            }
+        }
     </style>
 </head>
 <body class="@yield('bodyClass')">

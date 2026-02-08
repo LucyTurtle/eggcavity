@@ -27,17 +27,15 @@ class ForgotPasswordController extends Controller
                 'exception' => $e,
             ]);
 
-            return redirect()->route('password.request')
-                ->withInput($request->only('email'))
-                ->withErrors([
-                    'email' => 'We couldn\'t send a reset link. Please try again later or contact the site admin.',
-                ]);
+            return back()->withErrors([
+                'email' => 'We couldn\'t send a reset link. Please try again later or contact the site admin.',
+            ]);
         }
 
         if ($status === Password::RESET_LINK_SENT) {
-            return redirect()->route('password.request')->with('status', __($status));
+            return back()->with('status', __($status));
         }
 
-        return redirect()->route('password.request')->withErrors(['email' => __($status)]);
+        return back()->withErrors(['email' => __($status)]);
     }
 }

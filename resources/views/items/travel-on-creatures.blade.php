@@ -87,9 +87,9 @@
 <div id="composite-card" class="travel-on-result-card" style="display: none;">
     <div class="stage-image-wrapper" id="composite-wrapper">
         @if($travel->image_url)
-            <img id="composite-travel-bg" class="trinket-background" src="{{ $travel->image_url }}" alt="" referrerpolicy="no-referrer">
+            <img id="composite-travel-bg" class="trinket-background" src="{{ $travel->image_url }}" alt="" loading="lazy" referrerpolicy="no-referrer">
         @endif
-        <img id="composite-stage-img" alt="" referrerpolicy="no-referrer">
+        <img id="composite-stage-img" alt="" loading="lazy" referrerpolicy="no-referrer">
     </div>
 </div>
 <p class="travel-on-empty" id="no-creature-msg">Choose a creature above to see this travel on its stages.</p>

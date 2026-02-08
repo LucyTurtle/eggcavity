@@ -48,9 +48,23 @@ class WishlistController extends Controller
     {
         $user = Auth::user();
         $itemWishlists = $user->itemWishlists()->with('item')->orderBy('created_at', 'desc')->get();
+
+        $tampermonkeyArrayText = null;
+        if ($user->hasRole('developer') && $itemWishlists->isNotEmpty()) {
+            $names = $itemWishlists
+                ->filter(fn ($e) => $e->item && ! $e->item->is_cavecash && ! $e->item->is_retired)
+                ->map(fn ($e) => $e->item->name)
+                ->unique()
+                ->values();
+            if ($names->isNotEmpty()) {
+                $tampermonkeyArrayText = '[' . $names->map(fn ($name) => json_encode($name))->implode(', ') . ']';
+            }
+        }
+
         return view('wishlists.items', [
             'itemWishlists' => $itemWishlists,
             'shareItemsUrl' => $user->wishlist_share_items_url,
+            'tampermonkeyArrayText' => $tampermonkeyArrayText,
         ]);
     }
 

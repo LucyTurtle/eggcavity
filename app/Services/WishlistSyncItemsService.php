@@ -18,8 +18,25 @@ class WishlistSyncItemsService
     /** Seconds per request for run-time estimate (same as creature sync: ~1.2s/request from real runs) */
     private const ESTIMATE_SEC_PER_REQUEST = 1.2;
 
-    /** Shop IDs from the collection page dropdown (General Food Store, Travel Agency, etc.) */
+    /** Shop IDs from the collection page dropdown (match option values: 1, 2, 4, 5, 6, 7, 9, 10) */
     private const SHOP_IDS = [1, 2, 4, 5, 6, 7, 9, 10];
+
+    /** Shop names from the collection page dropdown (option labels) */
+    private const SHOP_NAMES = [
+        1 => 'General Food Store',
+        2 => 'Travel Agency',
+        4 => 'Toy Shop',
+        5 => 'Bakery',
+        6 => 'Bean Sack',
+        7 => 'Leila Library',
+        9 => 'Trinket Travels',
+        10 => 'Finley\'s Flavors',
+    ];
+
+    private function shopLabel(int $shopId): string
+    {
+        return self::SHOP_NAMES[$shopId] ?? "Shop {$shopId}";
+    }
 
     private function httpHeaders(): array
     {
@@ -78,10 +95,12 @@ class WishlistSyncItemsService
     private function fetchCollectionItemIds(int $eggId, ?callable $onProgress = null): array
     {
         $collectionImageUrls = [];
-        /** @var array<int, int> items collected per shop (for count check vs page total) */
-        $itemsPerShop = array_fill_keys(self::SHOP_IDS, 0);
+        /** @var array<int, array<string, true>> unique normalized image URLs per shop (for progress output) */
+        $uniquePerShop = array_fill_keys(self::SHOP_IDS, []);
         /** @var array<int, int|null> total items shown on first page of each shop (null if unparseable) */
         $totalShownPerShop = [];
+        /** @var array<int, int|null> unique used total from "X / Y Unique Used" (Y) per shop */
+        $uniqueTotalPerShop = [];
 
         // Phase 1: fetch page 1 of each shop to get page counts and collect items from page 1
         if ($onProgress) {
@@ -94,7 +113,7 @@ class WishlistSyncItemsService
             $response = Http::withHeaders($this->httpHeaders())->timeout(30)->get($url);
             if (! $response->successful()) {
                 if ($onProgress) {
-                    $onProgress("  Shop {$shopId}: HTTP " . $response->status());
+                    $onProgress('  ' . $this->shopLabel($shopId) . ': HTTP ' . $response->status());
                 }
                 $pagesPerShop[$shopId] = 0;
                 $totalShownPerShop[$shopId] = null;
@@ -102,12 +121,21 @@ class WishlistSyncItemsService
             }
             $html = $response->body();
             $lastPage = $this->parseLastPageNumber($html);
-            $pagesPerShop[$shopId] = $lastPage;
             $totalShownPerShop[$shopId] = $this->parseTotalItemsFromCollectionPage($html);
+            $uniqueTotalPerShop[$shopId] = $this->parseUniqueUsedTotalFromCollectionPage($html);
             $page1Urls = $this->parseImageUrlsFromCollectionHtml($html);
-            $itemsPerShop[$shopId] = count($page1Urls);
+            $page1Count = count($page1Urls);
+            if ($totalShownPerShop[$shopId] !== null && $page1Count > 0) {
+                $lastPageFromTotal = (int) ceil($totalShownPerShop[$shopId] / $page1Count);
+                if ($lastPageFromTotal > $lastPage) {
+                    $lastPage = $lastPageFromTotal;
+                }
+            }
+            $pagesPerShop[$shopId] = $lastPage;
             foreach ($page1Urls as $imageUrl) {
-                $collectionImageUrls[$this->normalizeImageUrl($imageUrl)] = true;
+                $norm = $this->normalizeImageUrl($imageUrl);
+                $collectionImageUrls[$norm] = true;
+                $uniquePerShop[$shopId][$norm] = true;
             }
         }
 
@@ -123,7 +151,7 @@ class WishlistSyncItemsService
                 $shopMin = (int) floor($shopSec / 60);
                 $shopSecRem = $shopSec % 60;
                 $shopEst = $shopMin . ' min' . ($shopSecRem > 0 ? ' ' . $shopSecRem . ' sec' : '');
-                $onProgress("  Shop {$shopId}: {$pages} page(s) (~{$shopEst})");
+                $onProgress('  ' . $this->shopLabel($shopId) . ": {$pages} page(s) (~{$shopEst})");
             }
             $onProgress("Estimated total run time: ~{$estStr} ({$totalPages} requests).");
             $onProgress('Fetching remaining pages...');
@@ -137,7 +165,7 @@ class WishlistSyncItemsService
             $shopEstSecRem = $shopEstSec % 60;
             $shopEstStr = $shopEstMin . ' min' . ($shopEstSecRem > 0 ? ' ' . $shopEstSecRem . ' sec' : '');
             if ($onProgress && $lastPage > 0) {
-                $onProgress("  Shop {$shopId}: fetching (est. ~{$shopEstStr})...");
+                $onProgress('  ' . $this->shopLabel($shopId) . ": fetching (est. ~{$shopEstStr})...");
             }
             $shopStart = microtime(true);
             for ($page = 2; $page <= $lastPage; $page++) {
@@ -148,9 +176,10 @@ class WishlistSyncItemsService
                     continue;
                 }
                 $pageUrls = $this->parseImageUrlsFromCollectionHtml($response->body());
-                $itemsPerShop[$shopId] += count($pageUrls);
                 foreach ($pageUrls as $imageUrl) {
-                    $collectionImageUrls[$this->normalizeImageUrl($imageUrl)] = true;
+                    $norm = $this->normalizeImageUrl($imageUrl);
+                    $collectionImageUrls[$norm] = true;
+                    $uniquePerShop[$shopId][$norm] = true;
                 }
             }
             if ($onProgress && $lastPage > 0) {
@@ -158,15 +187,12 @@ class WishlistSyncItemsService
                 $elapsedMin = (int) floor($elapsed / 60);
                 $elapsedSec = $elapsed % 60;
                 $elapsedStr = $elapsedMin . ' min ' . $elapsedSec . ' sec';
-                $collected = $itemsPerShop[$shopId];
-                $pageTotal = $totalShownPerShop[$shopId] ?? null;
-                $countNote = $pageTotal !== null
-                    ? " Items: collected {$collected}, page says {$pageTotal}."
-                    : " Items collected: {$collected}.";
-                if ($pageTotal !== null && $collected !== $pageTotal) {
-                    $countNote .= ' (mismatch — we\'ll figure out why later)';
-                }
-                $onProgress("  Shop {$shopId}: done ({$lastPage} page(s)) in {$elapsedStr}.{$countNote}");
+                $uniqueCount = count($uniquePerShop[$shopId]);
+                $uniqueTotal = $uniqueTotalPerShop[$shopId] ?? null;
+                $countNote = $uniqueTotal !== null
+                    ? " Unique items: {$uniqueCount}/{$uniqueTotal}."
+                    : " Unique items: {$uniqueCount}.";
+                $onProgress('  ' . $this->shopLabel($shopId) . ": done ({$lastPage} page(s)) in {$elapsedStr}.{$countNote}");
             }
         }
 
@@ -211,6 +237,18 @@ class WishlistSyncItemsService
         // "Total: 500", "total 500"
         if (preg_match('/total[:\s]+([\d,]+)/i', $html, $m)) {
             return (int) str_replace(',', '', $m[1]);
+        }
+        return null;
+    }
+
+    /**
+     * Parse the total (Y) from "X / Y Unique Used" in the collection page stats box.
+     * Returns null if not found. Tolerates HTML (e.g. </strong>) between digits and "Unique Used".
+     */
+    private function parseUniqueUsedTotalFromCollectionPage(string $html): ?int
+    {
+        if (preg_match('/(\d[\d,]*)\s*\/\s*(\d[\d,]*).*?Unique\s+Used/is', $html, $m)) {
+            return (int) str_replace(',', '', $m[2]);
         }
         return null;
     }

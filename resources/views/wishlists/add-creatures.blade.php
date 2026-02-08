@@ -64,6 +64,15 @@
     .archive-toolbar input[type="search"] { padding: 0.5rem 0.75rem; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 0.9375rem; min-width: 12rem; }
     .archive-toolbar button { padding: 0.5rem 1rem; background: var(--accent); color: white; border: none; border-radius: var(--radius-sm); font-weight: 500; font-size: 0.9375rem; cursor: pointer; }
     .archive-toolbar button:hover { background: var(--accent-hover); }
+    @media (max-width: 768px) {
+        .archive-toolbar button { min-height: 44px; padding: 0.75rem 1rem; }
+        .archive-toolbar input[type="search"] { min-height: 44px; font-size: 16px; }
+        .add-card .label { font-size: 1rem; }
+        .add-card .add-fields label, .add-card .add-fields input, .add-card .add-fields select { font-size: 0.875rem; }
+        .add-card .add-fields input, .add-card .add-fields select { min-height: 44px; padding: 0.5rem 0.75rem; }
+        .add-submit button { min-height: 44px; padding: 0.75rem 1.25rem; }
+        .add-pagination ul.pagination a, .add-pagination ul.pagination span { min-height: 44px; display: inline-flex; align-items: center; padding: 0.75rem 1rem; }
+    }
 </style>
 
 <form method="get" action="{{ route('wishlists.add.creatures') }}" class="archive-toolbar" style="margin-bottom: 1.25rem;">

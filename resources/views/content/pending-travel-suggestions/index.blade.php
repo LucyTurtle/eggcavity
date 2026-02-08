@@ -68,10 +68,10 @@
                                         <div class="pending-preview-wrap">
                                             <div class="pending-preview">
                                                 @if($travelItem->image_url)
-                                                    <img class="preview-bg" src="{{ $travelItem->image_url }}" alt="" referrerpolicy="no-referrer">
+                                                    <img class="preview-bg" src="{{ $travelItem->image_url }}" alt="" loading="lazy" referrerpolicy="no-referrer">
                                                 @endif
                                                 @if($creatureStage->image_url)
-                                                    <img class="preview-creature" src="{{ $creatureStage->image_url }}" alt="" referrerpolicy="no-referrer">
+                                                    <img class="preview-creature" src="{{ $creatureStage->image_url }}" alt="" loading="lazy" referrerpolicy="no-referrer">
                                                 @endif
                                             </div>
                                             <div class="stage-label">Stage {{ $creatureStage->stage_number }}</div>

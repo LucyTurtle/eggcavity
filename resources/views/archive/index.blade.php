@@ -153,14 +153,23 @@
     .archive-tags-dropdown__list label.tag-search-hidden { display: none; }
     .archive-tags-dropdown__footer { padding: 0.5rem 0.75rem; border-top: 1px solid var(--border); }
     .archive-tags-dropdown__footer .btn { padding: 0.4rem 0.75rem; font-size: 0.875rem; }
+    @media (max-width: 768px) {
+        .archive-toolbar button, .archive-toolbar .btn { min-height: 44px; padding: 0.75rem 1rem; }
+        .archive-tags-dropdown__trigger { min-height: 44px; padding: 0.75rem 1rem; }
+        .archive-toolbar input[type="search"] { min-height: 44px; font-size: 16px; }
+        .archive-card .label { font-size: 1rem; }
+        .archive-pagination ul.pagination a, .archive-pagination ul.pagination span { min-height: 44px; display: inline-flex; align-items: center; padding: 0.75rem 1rem; }
+    }
 </style>
 
 @php
     $hasTags = !empty($selectedTags);
     $hasEvolutions = isset($evolutions_filter) && $evolutions_filter >= 1 && $evolutions_filter <= 3;
     $hasHabitat = !empty($habitat_filter);
+    $hasObtainedFrom = !empty($obtained_from_filter);
+    $hasOnWishlist = !empty($on_wishlist_filter);
     $hasEvolvesByStat = !empty($evolves_by_stat_filter);
-    $hasFilters = $hasTags || ($gender_profile ?? '') !== '' || ($availability_filter ?? '') !== '' || ($dates_filter ?? '') !== '' || $hasEvolutions || $hasHabitat || $hasEvolvesByStat;
+    $hasFilters = $hasTags || ($gender_profile ?? '') !== '' || ($availability_filter ?? '') !== '' || ($dates_filter ?? '') !== '' || $hasEvolutions || $hasHabitat || $hasObtainedFrom || $hasOnWishlist || $hasEvolvesByStat;
 @endphp
 @if($hasFilters)
     <div class="card archive-active-filters" style="border-color: var(--accent); background: var(--accent-muted); margin-bottom: 1rem;">
@@ -170,16 +179,50 @@
                 @foreach($selectedTags as $t)
                     <span class="archive-tag-chip">
                         <strong>{{ $t }}</strong>
-                        <a href="{{ route('archive.index', array_merge(request()->only(['q', 'sort', 'dir', 'gender_profile', 'availability', 'dates_filter', 'evolutions', 'habitat', 'evolves_by_stat']), ['tags' => array_values(array_diff($selectedTags, [$t]))])) }}" class="archive-tag-chip-remove" aria-label="Remove tag {{ $t }}">×</a>
+                        <a href="{{ route('archive.index', array_merge(request()->only(['q', 'sort', 'dir', 'gender_profile', 'availability', 'dates_filter', 'evolutions', 'habitat', 'obtained_from', 'on_wishlist', 'evolves_by_stat']), ['tags' => array_values(array_diff($selectedTags, [$t]))])) }}" class="archive-tag-chip-remove" aria-label="Remove tag {{ $t }}">×</a>
                     </span>
                 @endforeach
             @endif
-            @if($gender_profile ?? '')@if($hasTags)<span style="margin-left: 0.25rem;">·</span>@endif Gender: <strong>{{ $gender_profile }}</strong>@endif
-            @if($availability_filter ?? '')@if($hasTags || ($gender_profile ?? ''))<span style="margin-left: 0.25rem;">·</span>@endif Availability: <strong>{{ $availability_filter }}</strong>@endif
-            @if($dates_filter ?? '')@if($hasTags || ($gender_profile ?? '') || ($availability_filter ?? ''))<span style="margin-left: 0.25rem;">·</span>@endif Dates: <strong>{{ $dates_filter }}</strong>@endif
-            @if($hasEvolutions)@if($hasTags || ($gender_profile ?? '') || ($availability_filter ?? '') || ($dates_filter ?? ''))<span style="margin-left: 0.25rem;">·</span>@endif Evolutions: <strong>{{ $evolutions_filter === 1 ? 'One (1)' : ($evolutions_filter === 2 ? 'Two (2)' : 'Three (3)') }}</strong>@endif
-            @if($hasHabitat)@if($hasTags || ($gender_profile ?? '') || ($availability_filter ?? '') || ($dates_filter ?? '') || $hasEvolutions)<span style="margin-left: 0.25rem;">·</span>@endif Habitat: <strong>{{ $habitat_filter }}</strong>@endif
-            @if($hasEvolvesByStat)@if($hasTags || ($gender_profile ?? '') || ($availability_filter ?? '') || ($dates_filter ?? '') || $hasEvolutions || $hasHabitat)<span style="margin-left: 0.25rem;">·</span>@endif Evolves by stat: <strong>{{ ucfirst($evolves_by_stat_filter) }}</strong>@endif
+            @if($gender_profile ?? '')
+                @if($hasTags)<span style="margin-left: 0.25rem;">·</span>
+                @endif
+                Gender: <strong>{{ $gender_profile }}</strong>
+            @endif
+            @if($availability_filter ?? '')
+                @if($hasTags || ($gender_profile ?? ''))<span style="margin-left: 0.25rem;">·</span>
+                @endif
+                Availability: <strong>{{ $availability_filter }}</strong>
+            @endif
+            @if($dates_filter ?? '')
+                @if($hasTags || ($gender_profile ?? '') || ($availability_filter ?? ''))<span style="margin-left: 0.25rem;">·</span>
+                @endif
+                Dates: <strong>{{ $dates_filter }}</strong>
+            @endif
+            @if($hasEvolutions)
+                @if($hasTags || ($gender_profile ?? '') || ($availability_filter ?? '') || ($dates_filter ?? ''))<span style="margin-left: 0.25rem;">·</span>
+                @endif
+                Evolutions: <strong>{{ $evolutions_filter === 1 ? 'One (1)' : ($evolutions_filter === 2 ? 'Two (2)' : 'Three (3)') }}</strong>
+            @endif
+            @if($hasHabitat)
+                @if($hasTags || ($gender_profile ?? '') || ($availability_filter ?? '') || ($dates_filter ?? '') || $hasEvolutions)<span style="margin-left: 0.25rem;">·</span>
+                @endif
+                Habitat: <strong>{{ $habitat_filter }}</strong>
+            @endif
+            @if($hasObtainedFrom)
+                @if($hasTags || ($gender_profile ?? '') || ($availability_filter ?? '') || ($dates_filter ?? '') || $hasEvolutions || $hasHabitat)<span style="margin-left: 0.25rem;">·</span>
+                @endif
+                Available from: <strong>{{ $obtained_from_filter }}</strong>
+            @endif
+            @auth
+            @if($hasOnWishlist)
+                <span style="margin-left: 0.25rem;">·</span> On wishlist
+            @endif
+            @endauth
+            @if($hasEvolvesByStat)
+                @if($hasTags || ($gender_profile ?? '') || ($availability_filter ?? '') || ($dates_filter ?? '') || $hasEvolutions || $hasHabitat || $hasObtainedFrom || $hasOnWishlist)<span style="margin-left: 0.25rem;">·</span>
+                @endif
+                Evolves by stat: <strong>{{ ucfirst($evolves_by_stat_filter) }}</strong>
+            @endif
             <a href="{{ route('archive.index', ['sort' => $sort, 'dir' => $dir]) }}" style="margin-left: 0.5rem; color: var(--accent); font-weight: 500;">Clear filters</a>
         </p>
     </div>
@@ -188,25 +231,63 @@
 <form method="get" action="{{ route('archive.index') }}" class="archive-toolbar">
     <input type="search" name="q" value="{{ old('q', $search) }}" placeholder="Search by name..." aria-label="Search by name">
     @foreach($selectedTags ?? [] as $t)<input type="hidden" name="tags[]" value="{{ $t }}">@endforeach
-    @if($gender_profile ?? '')<input type="hidden" name="gender_profile" value="{{ $gender_profile }}">@endif
-    @if($availability_filter ?? '')<input type="hidden" name="availability" value="{{ $availability_filter }}">@endif
-    @if($dates_filter ?? '')<input type="hidden" name="dates_filter" value="{{ $dates_filter }}">@endif
-    @if($evolutions_filter ?? '')<input type="hidden" name="evolutions" value="{{ $evolutions_filter }}">@endif
-    @if($habitat_filter ?? '')<input type="hidden" name="habitat" value="{{ $habitat_filter }}">@endif
-    @if($evolves_by_stat_filter ?? '')<input type="hidden" name="evolves_by_stat" value="{{ $evolves_by_stat_filter }}">@endif
+    @if($gender_profile ?? '')
+        <input type="hidden" name="gender_profile" value="{{ $gender_profile }}">
+    @endif
+    @if($availability_filter ?? '')
+        <input type="hidden" name="availability" value="{{ $availability_filter }}">
+    @endif
+    @if($dates_filter ?? '')
+        <input type="hidden" name="dates_filter" value="{{ $dates_filter }}">
+    @endif
+    @if($evolutions_filter ?? '')
+        <input type="hidden" name="evolutions" value="{{ $evolutions_filter }}">
+    @endif
+    @if($habitat_filter ?? '')
+        <input type="hidden" name="habitat" value="{{ $habitat_filter }}">
+    @endif
+    @if($obtained_from_filter ?? '')
+        <input type="hidden" name="obtained_from" value="{{ $obtained_from_filter }}">
+    @endif
+    @if($on_wishlist_filter ?? false)
+        <input type="hidden" name="on_wishlist" value="1">
+    @endif
+    @if($evolves_by_stat_filter ?? '')
+        <input type="hidden" name="evolves_by_stat" value="{{ $evolves_by_stat_filter }}">
+    @endif
     <input type="hidden" name="sort" value="{{ $sort }}">
     <input type="hidden" name="dir" value="{{ $dir }}">
     <button type="submit">Search</button>
 </form>
 
 <form method="get" action="{{ route('archive.index') }}" class="archive-toolbar archive-toolbar--filters" id="archive-filters-form">
-    @if(request('q'))<input type="hidden" name="q" value="{{ request('q') }}">@endif
-    @if($gender_profile ?? '')<input type="hidden" name="gender_profile" value="{{ $gender_profile }}">@endif
-    @if($availability_filter ?? '')<input type="hidden" name="availability" value="{{ $availability_filter }}">@endif
-    @if($dates_filter ?? '')<input type="hidden" name="dates_filter" value="{{ $dates_filter }}">@endif
-    @if($evolutions_filter ?? '')<input type="hidden" name="evolutions" value="{{ $evolutions_filter }}">@endif
-    @if($habitat_filter ?? '')<input type="hidden" name="habitat" value="{{ $habitat_filter }}">@endif
-    @if($evolves_by_stat_filter ?? '')<input type="hidden" name="evolves_by_stat" value="{{ $evolves_by_stat_filter }}">@endif
+    @if(request('q'))
+        <input type="hidden" name="q" value="{{ request('q') }}">
+    @endif
+    @if($gender_profile ?? '')
+        <input type="hidden" name="gender_profile" value="{{ $gender_profile }}">
+    @endif
+    @if($availability_filter ?? '')
+        <input type="hidden" name="availability" value="{{ $availability_filter }}">
+    @endif
+    @if($dates_filter ?? '')
+        <input type="hidden" name="dates_filter" value="{{ $dates_filter }}">
+    @endif
+    @if($evolutions_filter ?? '')
+        <input type="hidden" name="evolutions" value="{{ $evolutions_filter }}">
+    @endif
+    @if($habitat_filter ?? '')
+        <input type="hidden" name="habitat" value="{{ $habitat_filter }}">
+    @endif
+    @if($obtained_from_filter ?? '')
+        <input type="hidden" name="obtained_from" value="{{ $obtained_from_filter }}">
+    @endif
+    @if($on_wishlist_filter ?? false)
+        <input type="hidden" name="on_wishlist" value="1">
+    @endif
+    @if($evolves_by_stat_filter ?? '')
+        <input type="hidden" name="evolves_by_stat" value="{{ $evolves_by_stat_filter }}">
+    @endif
     <div class="archive-toolbar__field archive-tags-dropdown-wrap">
         <label id="archive-tags-label">Tags</label>
         <div class="archive-tags-dropdown" id="archive-tags-dropdown">
@@ -292,6 +373,23 @@
             @endforeach
         </select>
     </div>
+    <div class="archive-toolbar__field">
+        <label for="obtained_from">Available from</label>
+        <select name="obtained_from" id="obtained_from" onchange="this.form.submit()">
+            <option value="">Please Select</option>
+            @foreach($obtainedFromList ?? [] as $of)
+                <option value="{{ $of }}" {{ ($obtained_from_filter ?? '') === $of ? 'selected' : '' }}>{{ $of }}</option>
+            @endforeach
+        </select>
+    </div>
+    @auth
+    <div class="archive-toolbar__field archive-toolbar__field--checkbox" style="flex-direction: row; align-items: center;">
+        <label for="on_wishlist" style="display: flex; align-items: center; gap: 0.35rem; cursor: pointer;">
+            <input type="checkbox" name="on_wishlist" id="on_wishlist" value="1" {{ ($on_wishlist_filter ?? false) ? 'checked' : '' }} onchange="this.form.submit()">
+            <span>On wishlist</span>
+        </label>
+    </div>
+    @endauth
     <div class="archive-toolbar__field">
         <label for="evolves_by_stat">Evolves by stat</label>
         <select name="evolves_by_stat" id="evolves_by_stat" onchange="this.form.submit()">

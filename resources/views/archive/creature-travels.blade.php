@@ -107,8 +107,8 @@
 
     <div id="composite-card" class="travel-viewer-result-card" style="display: none;">
         <div class="stage-image-wrapper" id="composite-wrapper">
-            <img id="composite-travel-bg" class="trinket-background" alt="" referrerpolicy="no-referrer" style="display: none;">
-            <img id="composite-stage-img" alt="" referrerpolicy="no-referrer">
+            <img id="composite-travel-bg" class="trinket-background" alt="" loading="lazy" referrerpolicy="no-referrer" style="display: none;">
+            <img id="composite-stage-img" alt="" loading="lazy" referrerpolicy="no-referrer">
         </div>
     </div>
     <p class="travel-viewer-empty" id="no-travel-msg">Choose a travel above to see it on the selected stage.</p>
