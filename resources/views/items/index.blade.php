@@ -176,7 +176,8 @@
 
 @php
     $hasItemTags = !empty($selectedTags);
-    $hasItemFilters = $hasItemTags || $shop || $use_type;
+    $hasOnWishlist = !empty($on_wishlist_filter ?? false);
+    $hasItemFilters = $hasItemTags || $shop || $use_type || $hasOnWishlist;
     $itemTagLabels = collect($itemFilterTagOptions ?? [])->keyBy('value');
 @endphp
 @if($hasItemFilters)
@@ -188,12 +189,25 @@
                     @php $label = $itemTagLabels->get($t)['label'] ?? $t; @endphp
                     <span class="items-tag-chip">
                         <strong>{{ $label }}</strong>
-                        <a href="{{ route('items.index', array_merge(request()->only(['q', 'shop', 'use_type', 'sort', 'dir']), ['tags' => array_values(array_diff($selectedTags, [$t]))])) }}" class="items-tag-chip-remove" aria-label="Remove tag {{ $label }}">×</a>
+                        <a href="{{ route('items.index', array_merge(request()->only(['q', 'shop', 'use_type', 'on_wishlist', 'sort', 'dir']), ['tags' => array_values(array_diff($selectedTags, [$t]))])) }}" class="items-tag-chip-remove" aria-label="Remove tag {{ $label }}">×</a>
                     </span>
                 @endforeach
             @endif
-            @if($shop)@if($hasItemTags)<span style="margin-left: 0.25rem;">·</span>@endif Shop: <strong>{{ $shop }}</strong>@endif
-            @if($use_type)@if($hasItemTags || $shop)<span style="margin-left: 0.25rem;">·</span>@endif Type: <strong>{{ ucfirst($use_type) }}</strong>@endif
+            @if($shop)
+                @if($hasItemTags)<span style="margin-left: 0.25rem;">·</span>
+                @endif
+                Shop: <strong>{{ $shop }}</strong>
+            @endif
+            @if($use_type)
+                @if($hasItemTags || $shop)<span style="margin-left: 0.25rem;">·</span>
+                @endif
+                Type: <strong>{{ ucfirst($use_type) }}</strong>
+            @endif
+            @auth
+            @if($hasOnWishlist)
+                <span style="margin-left: 0.25rem;">·</span> On wishlist
+            @endif
+            @endauth
             <a href="{{ route('items.index', ['sort' => $sort, 'dir' => $dir]) }}" style="margin-left: 0.5rem; color: var(--accent); font-weight: 500;">Clear filters</a>
         </p>
     </div>
@@ -202,17 +216,33 @@
 <form method="get" action="{{ route('items.index') }}" class="items-toolbar">
     <input type="search" name="q" value="{{ old('q', $search) }}" placeholder="Search items..." aria-label="Search">
     @foreach($selectedTags ?? [] as $t)<input type="hidden" name="tags[]" value="{{ $t }}">@endforeach
-    @if($shop ?? null)<input type="hidden" name="shop" value="{{ $shop }}">@endif
-    @if($use_type ?? null)<input type="hidden" name="use_type" value="{{ $use_type }}">@endif
+    @if($shop ?? null)
+        <input type="hidden" name="shop" value="{{ $shop }}">
+    @endif
+    @if($use_type ?? null)
+        <input type="hidden" name="use_type" value="{{ $use_type }}">
+    @endif
+    @if($on_wishlist_filter ?? false)
+        <input type="hidden" name="on_wishlist" value="1">
+    @endif
     <input type="hidden" name="sort" value="{{ $sort }}">
     <input type="hidden" name="dir" value="{{ $dir }}">
     <button type="submit">Search</button>
 </form>
 
 <form method="get" action="{{ route('items.index') }}" class="items-toolbar items-toolbar--filters" id="items-filters-form">
-    @if(request('q'))<input type="hidden" name="q" value="{{ request('q') }}">@endif
-    @if($shop ?? null)<input type="hidden" name="shop" value="{{ $shop }}">@endif
-    @if($use_type ?? null)<input type="hidden" name="use_type" value="{{ $use_type }}">@endif
+    @if(request('q'))
+        <input type="hidden" name="q" value="{{ request('q') }}">
+    @endif
+    @if($shop ?? null)
+        <input type="hidden" name="shop" value="{{ $shop }}">
+    @endif
+    @if($use_type ?? null)
+        <input type="hidden" name="use_type" value="{{ $use_type }}">
+    @endif
+    @if($on_wishlist_filter ?? false)
+        <input type="hidden" name="on_wishlist" value="1">
+    @endif
     <div class="items-toolbar__field">
         <label for="shop">Shop</label>
         <select name="shop" id="shop" onchange="this.form.submit()">
@@ -231,6 +261,14 @@
             <option value="other" {{ $use_type === 'other' ? 'selected' : '' }}>Other</option>
         </select>
     </div>
+    @auth
+    <div class="items-toolbar__field" style="flex-direction: row; align-items: center;">
+        <label for="on_wishlist" style="display: flex; align-items: center; gap: 0.35rem; cursor: pointer;">
+            <input type="checkbox" name="on_wishlist" id="on_wishlist" value="1" {{ ($on_wishlist_filter ?? false) ? 'checked' : '' }} onchange="this.form.submit()">
+            <span>On wishlist</span>
+        </label>
+    </div>
+    @endauth
     <div class="items-toolbar__field items-tags-dropdown-wrap">
         <label id="items-tags-label">Tags</label>
         <div class="items-tags-dropdown" id="items-tags-dropdown">

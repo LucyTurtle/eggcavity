@@ -61,6 +61,13 @@
     .add-pagination ul.pagination span { background: var(--bg); color: var(--text-secondary); }
     .add-pagination ul.pagination li.disabled span { cursor: not-allowed; }
     .add-pagination ul.pagination li.active span { background: var(--accent-muted); border-color: var(--accent); color: var(--accent); }
+    @media (max-width: 768px) {
+        .add-card .label { font-size: 1rem; }
+        .add-card .add-fields label, .add-card .add-fields input { font-size: 0.875rem; }
+        .add-card .add-fields input { min-height: 44px; padding: 0.5rem 0.75rem; }
+        .add-submit button { min-height: 44px; padding: 0.75rem 1.25rem; }
+        .add-pagination ul.pagination a, .add-pagination ul.pagination span { min-height: 44px; display: inline-flex; align-items: center; padding: 0.75rem 1rem; }
+    }
 </style>
 
 @if($items->isEmpty())

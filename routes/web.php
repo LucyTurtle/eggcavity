@@ -30,6 +30,18 @@ Route::get('/api/archive-creatures', function () {
     return response()->json(['creatures' => $creatures]);
 })->name('api.archive-creatures');
 
+// Public JSON API: item name -> restock price (for usershop pricing script when no user-shop results)
+Route::get('/api/items-restock-prices', function () {
+    $items = Item::query()
+        ->whereNotNull('restock_price')
+        ->get(['name', 'restock_price']);
+    $map = [];
+    foreach ($items as $item) {
+        $map[$item->name] = $item->restock_price;
+    }
+    return response()->json(['prices' => $map]);
+})->name('api.items-restock-prices');
+
 Route::get('/archive', [ArchiveController::class, 'index'])->name('archive.index');
 Route::get('/archive/{slug}', [ArchiveController::class, 'show'])->name('archive.show');
 Route::get('/archive/{slug}/travels', [ArchiveController::class, 'creatureTravelViewer'])->name('archive.creature-travels');

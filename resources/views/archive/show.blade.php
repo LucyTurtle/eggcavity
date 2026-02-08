@@ -214,6 +214,16 @@
     .archive-detail .edit-mode input[type="number"],
     .archive-detail .edit-mode input[type="date"],
     .archive-detail .edit-mode textarea { max-width: 100%; }
+    .archive-related-creatures { margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--border); }
+    .archive-related-creatures__title { font-size: 1.125rem; margin: 0 0 0.25rem 0; }
+    .archive-related-creatures__subtitle { font-size: 0.875rem; color: var(--text-secondary); margin: 0 0 1rem 0; }
+    .archive-related-creatures__grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 1rem; }
+    .archive-related-creatures__card { display: flex; flex-direction: column; align-items: center; text-decoration: none; color: var(--text); border: 1px solid var(--border); border-radius: var(--radius); padding: 0.5rem; background: var(--surface); transition: border-color 0.15s, box-shadow 0.15s; }
+    .archive-related-creatures__card:hover { border-color: var(--accent); box-shadow: var(--shadow); }
+    .archive-related-creatures__thumb { width: 64px; height: 64px; border-radius: var(--radius-sm); overflow: hidden; background: var(--bg); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .archive-related-creatures__thumb img { width: 100%; height: 100%; object-fit: cover; }
+    .archive-related-creatures__thumb .fallback { font-size: 1.5rem; color: var(--text-secondary); }
+    .archive-related-creatures__label { font-size: 0.8125rem; text-align: center; margin-top: 0.35rem; line-height: 1.2; }
 </style>
 
 @if(session('success'))
@@ -530,6 +540,28 @@
                 </div>
             </div>
             @endif
+        </div>
+    @endif
+
+    @if(isset($relatedCreatures) && $relatedCreatures->isNotEmpty())
+        <div class="archive-related-creatures">
+            <h3 class="archive-related-creatures__title">Related creatures</h3>
+            <p class="archive-related-creatures__subtitle">Others with similar tags or by the same designer</p>
+            <div class="archive-related-creatures__grid">
+                @foreach($relatedCreatures as $related)
+                    <a href="{{ route('archive.show', $related->slug) }}" class="archive-related-creatures__card">
+                        <div class="archive-related-creatures__thumb">
+                            @if($related->thumbnail_url)
+                                <img src="{{ $related->thumbnail_url }}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='inline';">
+                                <span class="fallback" style="display: none;" aria-hidden="true">?</span>
+                            @else
+                                <span class="fallback" aria-hidden="true">?</span>
+                            @endif
+                        </div>
+                        <span class="archive-related-creatures__label">{{ $related->title }}</span>
+                    </a>
+                @endforeach
+            </div>
         </div>
     @endif
 

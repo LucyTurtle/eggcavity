@@ -20,7 +20,14 @@
     </div>
 @endif
 
-<div class="card" style="max-width: 400px;">
+<style>
+    @media (max-width: 768px) {
+        .forgot-password-card input[type="email"] { min-height: 44px; font-size: 16px; }
+        .forgot-password-card button[type="submit"] { min-height: 44px; padding: 0.75rem 1.25rem; }
+        .forgot-password-back { display: inline-block; min-height: 44px; line-height: 44px; padding: 0 0.25rem; }
+    }
+</style>
+<div class="card forgot-password-card" style="max-width: 400px;">
     <form method="post" action="{{ route('password.email') }}">
         @csrf
         <div style="margin-bottom: 1rem;">
@@ -33,6 +40,6 @@
 </div>
 
 <p style="margin-top: 1rem; font-size: 0.9375rem;">
-    <a href="{{ route('login') }}" style="color: var(--accent); font-weight: 500;">Back to log in</a>
+    <a href="{{ route('login') }}" class="forgot-password-back" style="color: var(--accent); font-weight: 500;">Back to log in</a>
 </p>
 @endsection

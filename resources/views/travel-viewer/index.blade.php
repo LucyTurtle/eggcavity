@@ -302,8 +302,8 @@
             card.className = 'saved-combo-card';
             card.innerHTML = '<button type="button" class="btn-remove" aria-label="Remove">×</button>' +
                 '<div class="thumb">' +
-                (travelBg ? '<img class="bg" src="' + travelBg + '" alt="" referrerpolicy="no-referrer">' : '') +
-                (stageImg ? '<img class="fg" src="' + stageImg + '" alt="" referrerpolicy="no-referrer">' : '') +
+                (travelBg ? '<img class="bg" src="' + travelBg + '" alt="" loading="lazy" referrerpolicy="no-referrer">' : '') +
+                (stageImg ? '<img class="fg" src="' + stageImg + '" alt="" loading="lazy" referrerpolicy="no-referrer">' : '') +
                 '</div><p class="label">' + escapeHtml(item.ct) + ' + ' + escapeHtml(item.tn) + (item.s != null ? ' (Stage ' + item.s + ')' : '') + '</p>';
             card.querySelector('.btn-remove').addEventListener('click', function() { removeSaved(i); });
             savedGrid.appendChild(card);

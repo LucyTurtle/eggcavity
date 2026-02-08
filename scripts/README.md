@@ -1,4 +1,25 @@
-# Sync creatures to wishlist
+# Scripts
+
+## Tampermonkey: EggCave shop wishlist auto-buy
+
+`eggcave-shop-wishlist-autobuy.user.js` is a userscript for [Tampermonkey](https://www.tampermonkey.net/) that runs on **eggcave.com/shops/***. It:
+
+- Keeps a **wishlist** (edit the `DEFAULT_WISHLIST` array in the script).
+- On a **shop listing page** (e.g. General Food Store): finds any in-stock item whose name matches the wishlist, waits a random 2–8 seconds, then opens that item’s haggle page.
+- On a **haggle page**: fills the offer with the **suggested amount** (the EC price shown on the page), waits a random 1–4 seconds, submits the offer, then **removes that item from the wishlist** (stored via Tampermonkey) so it isn’t bought again.
+- If no wishlist items are in stock, **refreshes the shop page** after a random **~5 minutes** (4.5–5.5).
+
+**Install:** Install Tampermonkey, then create a new script and paste the contents of `eggcave-shop-wishlist-autobuy.user.js`, or install from file. Edit `DEFAULT_WISHLIST` with the exact item names as shown on the shop (e.g. `"Juicy Jigsaw Gummies"`). Leave the tab open on any shop page (e.g. General Food Store or Travel Agency) and it will run automatically.
+
+---
+
+## Tampermonkey: EggCave shop reprice
+
+`eggcave-shop-reprice.user.js` runs on **eggcave.com/usershops/stock** (Manage Stock). When you open the page it **searches each item** on the user shop search (exact match for full names; partial match when the name ends with “…”), takes the **best user-shop price**, and sets your price to **5% under** that; if no user-shop results, it uses the **buy (restock) price** from the eggcavity API or `DEFAULT_PRICE_LIST`. Optional: set `DEFAULT_PRICE_LIST` in the script to `[{ name: "Item Name", price: 494 }, ...]` for items the API doesn’t have; developers can copy the “Reprice” array from the item wishlist page.
+
+---
+
+## Sync creatures to wishlist
 
 Add every archive creature you **don’t** have on Eggcave to your eggcavity creature wishlist.
 

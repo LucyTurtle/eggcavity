@@ -57,6 +57,13 @@ class ItemsController extends Controller
             $query->where('is_retired', false);
         }
 
+        // Filter by on wishlist (item wishlist for current user)
+        if ($request->filled('on_wishlist') && $request->user()) {
+            $query->whereHas('itemWishlists', function ($q) use ($request) {
+                $q->where('user_id', $request->user()->id);
+            });
+        }
+
         // Sort: name, first appeared, date added, or price (restock_price)
         $sort = $request->get('sort', 'name');
         $dir = $request->get('dir', 'asc');
@@ -96,6 +103,7 @@ class ItemsController extends Controller
             'search' => $request->get('q'),
             'shop' => $request->get('shop'),
             'use_type' => $request->get('use_type'),
+            'on_wishlist_filter' => $request->filled('on_wishlist') && $request->user(),
             'selectedTags' => $selectedTags ?? [],
             'itemFilterTagOptions' => $itemFilterTagOptions,
             'sort' => $sort,

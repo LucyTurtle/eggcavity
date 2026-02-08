@@ -58,6 +58,18 @@ class ArchiveController extends Controller
             $query->where('habitat', 'like', '%' . $request->habitat . '%');
         }
 
+        // Filter by obtained from (Available from)
+        if ($request->filled('obtained_from')) {
+            $query->where('obtained_from', 'like', '%' . $request->obtained_from . '%');
+        }
+
+        // Filter by on wishlist (creature wishlist for current user)
+        if ($request->filled('on_wishlist') && $request->user()) {
+            $query->whereHas('creatureWishlists', function ($q) use ($request) {
+                $q->where('user_id', $request->user()->id);
+            });
+        }
+
         // Filter by evolves by stat (stage requirement contains Views, Clicks, or Feeds)
         $allowedStats = ['views', 'clicks', 'feeds'];
         $evolvesByStat = $request->get('evolves_by_stat');
@@ -105,6 +117,22 @@ class ArchiveController extends Controller
             ->pluck('habitat')
             ->toArray();
 
+        // Dropdown shows atomic sources only (e.g. "Event/Plot", "The VEND Machine"), not every combined value
+        $obtainedFromAtoms = [
+            'Asteroid',
+            'Cash Shop Park',
+            'Cave',
+            'Event/Plot',
+            'Science and Research Center',
+            'The VEND Machine',
+            'Thief Shop',
+        ];
+        $obtainedFromList = collect($obtainedFromAtoms)->filter(function ($source) {
+            return ArchiveItem::whereNotNull('obtained_from')
+                ->where('obtained_from', 'like', '%' . $source . '%')
+                ->exists();
+        })->values()->sort()->values()->toArray();
+
         // Distinct tags from all creatures (tags stored as JSON array)
         $allTags = ArchiveItem::whereNotNull('tags')
             ->get()
@@ -125,12 +153,15 @@ class ArchiveController extends Controller
             'dates_filter' => $request->get('dates_filter'),
             'evolutions_filter' => $evolutions >= 1 && $evolutions <= 3 ? $evolutions : null,
             'habitat_filter' => $request->filled('habitat') ? $request->habitat : null,
+            'obtained_from_filter' => $request->filled('obtained_from') ? $request->obtained_from : null,
+            'on_wishlist_filter' => $request->filled('on_wishlist') && $request->user(),
             'evolves_by_stat_filter' => is_string($evolvesByStat) && in_array(strtolower($evolvesByStat), $allowedStats, true) ? strtolower($evolvesByStat) : null,
             'sort' => $sort,
             'dir' => $dir,
             'genderProfiles' => $genderProfiles,
             'availabilities' => $availabilities,
             'habitats' => $habitats,
+            'obtainedFromList' => $obtainedFromList,
             'tags' => $allTags,
         ]);
     }
@@ -140,6 +171,8 @@ class ArchiveController extends Controller
         $item = ArchiveItem::where('slug', $slug)->with(['images', 'stages', 'travelSuggestions.item'])->firstOrFail();
         [$trinketTravels, $recommendedTravels] = $this->computeRecommendedTravels($item);
 
+        $relatedCreatures = $this->getRelatedCreatures($item);
+
         $user = request()->user();
         $canApplyRecommendations = $user && ($user->hasRole('admin') || $user->hasRole('developer'));
 
@@ -147,8 +180,43 @@ class ArchiveController extends Controller
             'item' => $item,
             'trinketTravels' => $trinketTravels,
             'recommendedTravels' => $recommendedTravels,
+            'relatedCreatures' => $relatedCreatures,
             'canApplyRecommendations' => $canApplyRecommendations,
         ]);
+    }
+
+    /**
+     * Other creatures with similar tags or same designer (design_concept_user / entry_written_by).
+     */
+    private function getRelatedCreatures(ArchiveItem $item): \Illuminate\Support\Collection
+    {
+        $hasTags = ! empty($item->tags) && is_array($item->tags);
+        $hasDesigner = ! empty(trim($item->design_concept_user ?? ''));
+        $hasAuthor = ! empty(trim($item->entry_written_by ?? ''));
+
+        if (! $hasTags && ! $hasDesigner && ! $hasAuthor) {
+            return collect([]);
+        }
+
+        return ArchiveItem::where('id', '!=', $item->id)
+            ->where(function ($q) use ($item, $hasTags, $hasDesigner, $hasAuthor) {
+                if ($hasTags) {
+                    $q->where(function ($q2) use ($item) {
+                        foreach ($item->tags as $tag) {
+                            $q2->orWhereJsonContains('tags', $tag);
+                        }
+                    });
+                }
+                if ($hasDesigner) {
+                    $q->orWhere('design_concept_user', $item->design_concept_user);
+                }
+                if ($hasAuthor) {
+                    $q->orWhere('entry_written_by', $item->entry_written_by);
+                }
+            })
+            ->orderBy('title')
+            ->limit(8)
+            ->get(['id', 'title', 'slug', 'image_url']);
     }
 
     /**
