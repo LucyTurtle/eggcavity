@@ -49,8 +49,8 @@ class WishlistSyncItemsService
     public function sync(User $user, int $eggId, bool $clear = false, ?callable $onProgress = null): array
     {
         $haveItemIds = $this->fetchCollectionItemIds($eggId, $onProgress);
-        $allItems = Item::orderBy('name')->get(['id', 'name', 'slug']);
-        $toAdd = $allItems->filter(fn ($item) => ! isset($haveItemIds[$item->id]));
+        $allItems = Item::orderBy('name')->get(['id', 'name', 'slug', 'use']);
+        $toAdd = $allItems->filter(fn ($item) => ! isset($haveItemIds[$item->id]) && ! $item->isTravel());
 
         $cleared = 0;
         if ($clear) {
@@ -98,10 +98,15 @@ class WishlistSyncItemsService
             $onProgress('Checking each shop for page counts...');
         }
         $pagesPerShop = [];
+        $shopIndex = 0;
         foreach (self::SHOP_IDS as $shopId) {
+            $shopIndex++;
+            if ($onProgress) {
+                $onProgress('Fetching ' . $this->shopLabel($shopId) . " ({$shopIndex}/" . count(self::SHOP_IDS) . ') page 1...');
+            }
             $url = self::EGGCAVE_BASE . '/egg/' . $eggId . '/collection?shop=' . $shopId . '&page=1';
             $this->delay();
-            $response = Http::withHeaders(EggcaveBrowserHeaders::forRequest($url))->timeout(30)->get($url);
+            $response = Http::withHeaders(EggcaveBrowserHeaders::forRequest($url))->timeout(30)->connectTimeout(10)->get($url);
             if (! $response->successful()) {
                 if ($onProgress) {
                     $onProgress('  ' . $this->shopLabel($shopId) . ': HTTP ' . $response->status());
@@ -163,7 +168,7 @@ class WishlistSyncItemsService
             for ($page = 2; $page <= $lastPage; $page++) {
                 $this->delay();
                 $url = self::EGGCAVE_BASE . '/egg/' . $eggId . '/collection?shop=' . $shopId . '&page=' . $page;
-                $response = Http::withHeaders(EggcaveBrowserHeaders::forRequest($url, $prevPageUrl))->timeout(30)->get($url);
+                $response = Http::withHeaders(EggcaveBrowserHeaders::forRequest($url, $prevPageUrl))->timeout(30)->connectTimeout(10)->get($url);
                 $prevPageUrl = $url;
                 if (! $response->successful()) {
                     continue;

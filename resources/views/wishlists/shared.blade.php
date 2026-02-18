@@ -57,11 +57,9 @@
             @foreach($creatureWishlists as $entry)
                 @php($creature = $entry->archiveItem)
                 @if($creature)
-                    @php
-                        $stageNum = $entry->display_stage_number;
-                        $stage = $creature->stages->firstWhere('stage_number', $stageNum) ?? $creature->stages->first();
-                        $thumbUrl = $stage ? $stage->image_url : $creature->thumbnail_url;
-                    @endphp
+                    @php($stageNum = $entry->display_stage_number)
+                    @php($stage = $creature->stages->firstWhere('stage_number', $stageNum) ?? $creature->stages->first())
+                    @php($thumbUrl = $stage ? $stage->image_url : $creature->thumbnail_url)
                     <article class="wishlist-card">
                         <a href="{{ route('archive.show', $creature->slug) }}">
                             <div class="thumb">

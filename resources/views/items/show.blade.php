@@ -199,6 +199,13 @@
         </div>
     @endif
 
+    @if($onWishlist ?? false)
+        <div class="item-tags" style="margin-bottom: 1rem;">
+            <span style="font-size: 0.8125rem; color: var(--text-secondary); margin-right: 0.5rem;">Tags:</span>
+            <a href="{{ route('items.index', ['on_wishlist' => 1]) }}" style="display: inline-block; font-size: 0.8125rem; padding: 0.25rem 0.5rem; margin-right: 0.5rem; margin-bottom: 0.5rem; border-radius: var(--radius-sm); background: var(--accent-muted); color: var(--accent); text-decoration: none;">On wishlist</a>
+        </div>
+    @endif
+
     @if($item->rarity || $item->use || $item->associated_shop || $item->restock_price || $item->first_appeared || $item->is_retired || ($canEdit ?? false))
         <div class="card">
             <h3 style="margin: 0 0 0.75rem 0; font-size: 1rem;">Details</h3>

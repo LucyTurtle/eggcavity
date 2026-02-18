@@ -184,6 +184,7 @@ class ArchiveController extends Controller
 
         $user = request()->user();
         $canApplyRecommendations = $user && ($user->hasRole('admin') || $user->hasRole('developer'));
+        $onWishlist = $user && $item->creatureWishlists()->where('user_id', $user->id)->exists();
 
         return view('archive.show', [
             'item' => $item,
@@ -191,6 +192,7 @@ class ArchiveController extends Controller
             'recommendedTravels' => $recommendedTravels,
             'relatedCreatures' => $relatedCreatures,
             'canApplyRecommendations' => $canApplyRecommendations,
+            'onWishlist' => $onWishlist,
         ]);
     }
 
