@@ -508,14 +508,18 @@
         </div>
     @endif
 
-    @if(($item->tags && count($item->tags) > 0) || $canApplyRecommendations)
+    @if(($item->tags && count($item->tags) > 0) || ($onWishlist ?? false) || $canApplyRecommendations)
         <div class="archive-tags">
             <div class="view-mode tags-list">
                 @if($item->tags && count($item->tags) > 0)
                     @foreach($item->tags as $tag)
                         <a href="{{ route('archive.index', ['tags' => [$tag]]) }}">{{ $tag }}</a>
                     @endforeach
-                @else
+                @endif
+                @if($onWishlist ?? false)
+                    <a href="{{ route('archive.index', ['on_wishlist' => 1]) }}" class="archive-tag-on-wishlist">On wishlist</a>
+                @endif
+                @if((!$item->tags || count($item->tags) === 0) && !($onWishlist ?? false))
                     <p style="margin: 0; font-size: 0.875rem; color: var(--text-secondary);">No tags</p>
                 @endif
             </div>

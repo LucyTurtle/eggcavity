@@ -418,6 +418,60 @@ class WishlistController extends Controller
     }
 
     /**
+     * Check which of a pasted list of creature names are on the user's creature wishlist.
+     * GET: form to paste list (one per line or JSON array). POST: show intersection.
+     */
+    public function checkCreaturesWishlist(Request $request)
+    {
+        $user = Auth::user();
+        $wishlistTitles = $user->creatureWishlists()
+            ->with('archiveItem')
+            ->get()
+            ->pluck('archiveItem')
+            ->filter()
+            ->pluck('title')
+            ->unique()
+            ->map(fn ($t) => trim((string) $t))
+            ->filter(fn ($t) => $t !== '')
+            ->flip()
+            ->map(fn ($_, $t) => mb_strtolower($t))
+            ->flip()
+            ->toArray();
+
+        $input = $request->input('creatures', '');
+        $submitted = [];
+        if (is_string($input) && $input !== '') {
+            if (preg_match('/^\[[\s\S]*\]$/s', trim($input))) {
+                $decoded = json_decode($input, true);
+                $submitted = is_array($decoded) ? array_values($decoded) : [];
+            } else {
+                $submitted = array_values(array_filter(array_map('trim', preg_split('/[\r\n]+/', $input))));
+            }
+        }
+
+        $onWishlist = [];
+        $normalizedWishlist = array_map('mb_strtolower', array_keys($wishlistTitles));
+        foreach ($submitted as $name) {
+            $n = mb_strtolower(trim($name));
+            if ($n === '') {
+                continue;
+            }
+            foreach ($normalizedWishlist as $w) {
+                if ($w === $n) {
+                    $onWishlist[] = $name;
+                    break;
+                }
+            }
+        }
+
+        return view('wishlists.check-creatures', [
+            'wishlistTitles' => array_keys($wishlistTitles),
+            'submitted' => $submitted,
+            'onWishlist' => $onWishlist,
+        ]);
+    }
+
+    /**
      * Clear all creature wishlist entries for the authenticated user.
      * Used by the sync script with --clear so the wishlist is repopulated from scratch.
      */

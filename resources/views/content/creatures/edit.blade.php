@@ -119,4 +119,13 @@
         <button type="submit" class="btn-submit">Save changes</button>
     </form>
 </div>
+
+<div class="card" style="margin-top: 1.5rem; border-color: var(--border);">
+    <h3 style="margin: 0 0 0.5rem 0; font-size: 1rem; color: var(--text-secondary);">Danger zone</h3>
+    <form method="post" action="{{ route('content.creature.destroy', $creature) }}" style="display: inline;" onsubmit="return confirm('Permanently delete this creature? This cannot be undone.');">
+        @csrf
+        @method('DELETE')
+        <button type="submit" class="btn-submit" style="background: #dc2626;">Delete creature</button>
+    </form>
+</div>
 @endsection

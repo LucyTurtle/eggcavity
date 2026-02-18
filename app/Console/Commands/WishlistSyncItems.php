@@ -17,6 +17,8 @@ class WishlistSyncItems extends Command
 
     public function handle(WishlistSyncItemsService $service): int
     {
+        $this->line('Starting wishlist:sync-items...');
+
         $userInput = $this->argument('user');
         $user = ctype_digit((string) $userInput)
             ? User::find($userInput)

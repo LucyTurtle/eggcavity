@@ -136,11 +136,13 @@ class ItemsController extends Controller
         
         $user = request()->user();
         $canEdit = $user && ($user->hasRole('admin') || $user->hasRole('developer') || $user->hasRole('content_manager'));
+        $onWishlist = $user && $item->itemWishlists()->where('user_id', $user->id)->exists();
 
         return view('items.show', [
             'item' => $item,
             'associatedCreature' => $associatedCreature,
             'canEdit' => $canEdit,
+            'onWishlist' => $onWishlist,
         ]);
     }
 
