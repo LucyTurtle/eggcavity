@@ -47,10 +47,22 @@ class WishlistSyncItems extends Command
             ? (int) floor($elapsed / 60) . ' min ' . ($elapsed % 60) . ' sec'
             : $elapsed . ' sec';
         $this->info("  Found {$result['have_count']} item(s) in your collection.");
-        if ($clear && $result['cleared'] > 0) {
-            $this->info("  Cleared {$result['cleared']} from wishlist.");
+        if ($clear) {
+            $clearedItems = $result['cleared'];
+            $clearedTravels = $result['cleared_travels'] ?? 0;
+            if ($clearedTravels > 0) {
+                $this->info("  Cleared {$clearedItems} from item wishlist, {$clearedTravels} from travel wishlist.");
+            } elseif ($clearedItems > 0) {
+                $this->info("  Cleared {$clearedItems} from item wishlist.");
+            }
         }
-        $this->info("  Added {$result['added']} item(s) to wishlist.");
+        $addedItems = $result['added'];
+        $addedTravels = $result['added_travels'] ?? 0;
+        if ($addedTravels > 0) {
+            $this->info("  Added {$addedItems} item(s) to item wishlist, {$addedTravels} travel(s) to travel wishlist.");
+        } else {
+            $this->info("  Added {$addedItems} item(s) to item wishlist.");
+        }
         $this->info("Total run time: {$totalRuntime}.");
         $this->info('Done.');
         return self::SUCCESS;

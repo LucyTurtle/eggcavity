@@ -41,25 +41,30 @@ class WishlistSyncItemsService
 
     /**
      * Scrape the user's item collection for one egg (all shops, all pages), then add every
-     * item from our catalog that they don't have to their item wishlist.
+     * catalog item they don't have: non-travel items to item wishlist, travel items to travel wishlist.
      *
      * @param  callable(string): void|null  $onProgress
-     * @return array{cleared: int, added: int, have_count: int, to_add_count: int}
+     * @return array{cleared: int, cleared_travels: int, added: int, added_travels: int, have_count: int, to_add_count: int}
      */
     public function sync(User $user, int $eggId, bool $clear = false, ?callable $onProgress = null): array
     {
         $haveItemIds = $this->fetchCollectionItemIds($eggId, $onProgress);
         $allItems = Item::orderBy('name')->get(['id', 'name', 'slug', 'use']);
-        $toAdd = $allItems->filter(fn ($item) => ! isset($haveItemIds[$item->id]) && ! $item->isTravel());
+        $missing = $allItems->filter(fn ($item) => ! isset($haveItemIds[$item->id]));
+        $toAddItems = $missing->filter(fn ($item) => ! $item->isTravel());
+        $toAddTravels = $missing->filter(fn ($item) => $item->isTravel());
 
         $cleared = 0;
+        $clearedTravels = 0;
         if ($clear) {
             $cleared = $user->itemWishlists()->count();
             $user->itemWishlists()->delete();
+            $clearedTravels = $user->travelWishlists()->count();
+            $user->travelWishlists()->delete();
         }
 
         $added = 0;
-        foreach ($toAdd as $item) {
+        foreach ($toAddItems as $item) {
             $user->itemWishlists()->updateOrCreate(
                 ['item_id' => $item->id],
                 ['amount' => 1, 'notes' => null]
@@ -67,11 +72,22 @@ class WishlistSyncItemsService
             $added++;
         }
 
+        $addedTravels = 0;
+        foreach ($toAddTravels as $item) {
+            $user->travelWishlists()->updateOrCreate(
+                ['item_id' => $item->id],
+                ['amount' => 1, 'notes' => null]
+            );
+            $addedTravels++;
+        }
+
         return [
             'cleared' => $cleared,
+            'cleared_travels' => $clearedTravels,
             'added' => $added,
+            'added_travels' => $addedTravels,
             'have_count' => count($haveItemIds),
-            'to_add_count' => $toAdd->count(),
+            'to_add_count' => $toAddItems->count() + $toAddTravels->count(),
         ];
     }
 
